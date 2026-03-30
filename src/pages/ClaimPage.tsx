@@ -7,6 +7,7 @@ import ResultCard from "@/components/common/ResultCard";
 import Modal from "@/components/common/Modal";
 import type { DamageType, OwnerType } from "@/lib/types";
 import clsx from "clsx";
+import { useNavigate } from "react-router-dom";
 
 const DAMAGE_OPTIONS: { type: DamageType; title: string; desc: string; icon: React.ReactNode }[] = [
   {
@@ -36,7 +37,8 @@ const DAMAGE_OPTIONS: { type: DamageType; title: string; desc: string; icon: Rea
 ];
 
 export default function ClaimPage() {
-  const { user, setActiveTab } = useApp();
+  const { user } = useApp();
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [damageType, setDamageType] = useState<DamageType | null>(null);
   const [ownerType, setOwnerType] = useState<OwnerType>("owner");
@@ -81,7 +83,7 @@ export default function ClaimPage() {
     setDamageType(null);
     setPhotos([null, null, null]);
     setDesc("");
-    setActiveTab("myclaims");
+    navigate("/myclaims");
   }
 
   // Step 1: 피해유형 선택
@@ -89,7 +91,7 @@ export default function ClaimPage() {
     return (
       <div className="animate-[fadeIn_0.25s_ease]">
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => setActiveTab("home")} className="btn btn-icon bg-gray-100">
+          <button onClick={() => navigate("/")} className="btn btn-icon bg-gray-100">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="15 18 9 12 15 6" />
             </svg>

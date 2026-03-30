@@ -1,9 +1,11 @@
 import { useApp } from "@/contexts/AppContext";
 import Badge from "@/components/common/Badge";
 import Card from "@/components/common/Card";
+import { useNavigate } from "react-router-dom";
 
 export default function HomePage() {
-  const { user, setActiveTab, setSubPage } = useApp();
+  const { user } = useApp();
+  const navigate = useNavigate();
 
   return (
     <div className="animate-[fadeIn_0.25s_ease]">
@@ -15,7 +17,7 @@ export default function HomePage() {
       {/* CTA Card */}
       <div
         className="bg-primary rounded-[var(--radius-card)] p-7 text-white cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(255,107,53,0.3)] mb-3.5"
-        onClick={() => setActiveTab("claim")}
+        onClick={() => navigate("/claim")}
       >
         <div className="flex items-center gap-3 mb-2.5">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -29,7 +31,7 @@ export default function HomePage() {
       </div>
 
       {/* Status Card */}
-      <Card variant="outlined" className="mb-3.5" onClick={() => setActiveTab("myclaims")}>
+      <Card variant="outlined" className="mb-3.5" onClick={() => navigate("/myclaims")}>
         <Card.Body className="!py-4 flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-full bg-primary-light flex items-center justify-center shrink-0">
             <svg className="text-primary" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -53,22 +55,22 @@ export default function HomePage() {
         <QuickMenuItem
           icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>}
           label="사고접수"
-          onClick={() => setActiveTab("claim")}
+          onClick={() => navigate("/claim")}
         />
         <QuickMenuItem
           icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>}
           label="내 접수"
-          onClick={() => setActiveTab("myclaims")}
+          onClick={() => navigate("/myclaims")}
         />
         <QuickMenuItem
           icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>}
           label="보험안내"
-          onClick={() => { setActiveTab("more"); setSubPage("insurance-info"); }}
+          onClick={() => navigate("/insurance-info")}
         />
         <QuickMenuItem
           icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" /><polyline points="13 2 13 9 20 9" /></svg>}
           label="서류관리"
-          onClick={() => { setActiveTab("more"); setSubPage("documents"); }}
+          onClick={() => navigate("/documents")}
         />
       </div>
 

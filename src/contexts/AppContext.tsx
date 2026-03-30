@@ -3,10 +3,6 @@ import type { TabId, UserInfo, SubPage } from "@/lib/types";
 
 interface AppContextType {
   user: UserInfo;
-  activeTab: TabId;
-  setActiveTab: (tab: TabId) => void;
-  subPage: SubPage;
-  setSubPage: (page: SubPage) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -29,17 +25,10 @@ function getUserFromParams(): UserInfo {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user] = useState<UserInfo>(getUserFromParams);
-  const [activeTab, setActiveTab] = useState<TabId>("home");
-  const [subPage, setSubPage] = useState<SubPage>(null);
-
-  function handleTabChange(tab: TabId) {
-    setActiveTab(tab);
-    setSubPage(null);
-  }
 
   return (
     <AppContext.Provider
-      value={{ user, activeTab, setActiveTab: handleTabChange, subPage, setSubPage }}
+      value={{ user }}
     >
       {children}
     </AppContext.Provider>
