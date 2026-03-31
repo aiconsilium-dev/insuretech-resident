@@ -11,11 +11,10 @@ import DocumentsPage from '@/pages/DocumentsPage';
 
 function AppContent() {
   const location = useLocation();
-  // 하단 탭 바가 필요 없는 페이지
   const noTabBar = ['/claim'];
 
   return (
-    <div className="max-w-[430px] mx-auto min-h-dvh flex flex-col relative overflow-x-hidden bg-gray-50">
+    <div className="max-w-[430px] mx-auto min-h-dvh flex flex-col relative overflow-x-hidden bg-bg">
       <div className="flex-1">
         <Routes>
           <Route path="/" element={<HomePage />} />

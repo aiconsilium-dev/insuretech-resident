@@ -20,7 +20,7 @@ function Card({ children, variant = "default", className, onClick }: CardProps) 
       <div
         className={clsx(
           "card",
-          variant === "outlined" && "border border-gray-200 shadow-none",
+          variant === "outlined" && "border border-border shadow-none",
           variant === "elevated" && "shadow-md",
           onClick && "cursor-pointer active:scale-[0.98] transition-transform",
           className
@@ -51,7 +51,7 @@ function CardBody({ children, className }: { children: ReactNode; className?: st
 
 function CardFooter({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={clsx("px-4 pt-2 pb-4 border-t border-gray-100", className)}>
+    <div className={clsx("px-4 pt-2 pb-4 border-t border-border-subtle", className)}>
       {children}
     </div>
   );

@@ -19,19 +19,19 @@ const ANALYSIS_TEXTS: Record<DamageType, string> = {
 
 function TypeBadge({ type, highlighted }: { type: ResultType; highlighted: boolean }) {
   const badges: Record<ResultType, { cls: string; label: string; desc: string }> = {
-    A: { cls: "bg-black text-white", label: "TYPE A", desc: "시공사 하자\n하자보수 청구 대상" },
-    B: { cls: "bg-gray-300 text-gray-700", label: "TYPE B", desc: "면책 검토 대상" },
-    C: { cls: "bg-primary text-white", label: "TYPE C", desc: "보험금 산출\nAI 적산 완료" },
+    A: { cls: "badge-black", label: "TYPE A", desc: "시공사 하자\n하자보수 청구 대상" },
+    B: { cls: "badge-gray", label: "TYPE B", desc: "면책 검토 대상" },
+    C: { cls: "bg-accent text-white", label: "TYPE C", desc: "보험금 산출\nAI 적산 완료" },
   };
   const b = badges[type];
 
   return (
     <div className={clsx(
-      "flex-1 py-3.5 px-2.5 rounded-xl text-center border-2",
-      highlighted ? "border-primary bg-[rgba(255,107,53,0.05)]" : "border-gray-200 bg-gray-50"
+      "flex-1 py-3.5 px-2.5 rounded-xl text-center border",
+      highlighted ? "border-primary bg-primary-light" : "border-border bg-bg-secondary"
     )}>
       <span className={clsx("inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold mb-1.5", b.cls)}>{b.label}</span>
-      <div className={clsx("text-[11px] leading-snug mt-1 whitespace-pre-line", highlighted ? "text-gray-700" : "text-gray-500")}>{b.desc}</div>
+      <div className={clsx("text-[11px] leading-snug mt-1 whitespace-pre-line", highlighted ? "text-text-body" : "text-text-muted")}>{b.desc}</div>
     </div>
   );
 }
@@ -43,8 +43,8 @@ export default function ResultCard({ damageType, ownerType, onSubmit }: Props) {
   return (
     <div>
       <div className="text-center mb-6">
-        <h2 className="text-[22px] font-bold mb-1">AI 분석 완료</h2>
-        <p className="text-sm text-gray-500">{DAMAGE_LABELS[damageType]}</p>
+        <h2 className="text-[22px] font-bold text-text-heading mb-1 tracking-[-0.02em]">AI 분석 완료</h2>
+        <p className="text-sm text-text-muted">{DAMAGE_LABELS[damageType]}</p>
       </div>
 
       <div className="flex gap-2 mb-5">
@@ -54,16 +54,16 @@ export default function ResultCard({ damageType, ownerType, onSubmit }: Props) {
       </div>
 
       <div
-        className="bg-gray-50 rounded-xl p-4.5 mb-5 text-sm text-gray-600 leading-relaxed [&_b]:font-semibold"
+        className="bg-bg-secondary rounded-xl p-4.5 mb-5 text-sm text-text-muted leading-relaxed [&_b]:font-semibold [&_b]:text-text-body"
         dangerouslySetInnerHTML={{ __html: ANALYSIS_TEXTS[damageType] }}
       />
 
       <div className="text-center py-6 mb-5">
-        <div className="text-sm text-gray-500 mb-1.5">예상 보상금액</div>
-        <div className="text-4xl font-extrabold text-primary">
+        <div className="text-sm text-text-muted mb-1.5">예상 보상금액</div>
+        <div className="text-4xl font-extrabold text-text-heading tracking-[-0.5px]">
           {amount > 0 ? `${amount.toLocaleString()}원` : "별도 산정"}
         </div>
-        <div className="text-[13px] text-gray-500 mt-2">
+        <div className="text-[13px] text-text-muted mt-2">
           {amount > 0
             ? ownerType === "owner" ? "소유자 기준 (건물마감재 보상)" : "임차인 기준 (가재도구 보상)"
             : resultType === "A" ? "하자보수 청구 대상 - 금액 별도 산정" : "추가 검토 후 안내"}

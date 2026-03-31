@@ -6,10 +6,10 @@ function SubHeader({ title }: { title: string }) {
   const navigate = useNavigate();
   return (
     <div className="flex items-center gap-3 mb-6">
-      <button onClick={() => navigate(-1)} className="btn btn-icon bg-gray-100">
+      <button onClick={() => navigate(-1)} className="btn btn-icon bg-bg-secondary">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
       </button>
-      <h2 className="text-xl font-bold">{title}</h2>
+      <h2 className="text-xl font-bold text-text-heading">{title}</h2>
     </div>
   );
 }
@@ -17,8 +17,8 @@ function SubHeader({ title }: { title: string }) {
 function ProfileRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between py-2 text-sm">
-      <span className="text-gray-500">{label}</span>
-      <span className="font-semibold">{value}</span>
+      <span className="text-text-muted">{label}</span>
+      <span className="font-semibold text-text-body">{value}</span>
     </div>
   );
 }
@@ -26,7 +26,7 @@ function ProfileRow({ label, value }: { label: string; value: string }) {
 export default function ProfilePage() {
   const { user } = useApp();
   return (
-    <div className="animate-[fadeIn_0.25s_ease]">
+    <div className="animate-[fadeIn_0.25s_ease] px-[var(--space-page)] pt-[var(--space-page)] pb-24">
       <SubHeader title="프로필" />
       <Card variant="outlined" className="!p-6">
         <ProfileRow label="이름" value={user.name} />

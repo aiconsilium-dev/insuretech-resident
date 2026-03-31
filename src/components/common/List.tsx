@@ -24,8 +24,8 @@ function ListItem({ children, className, onClick }: ListItemProps) {
   return (
     <div
       className={clsx(
-        "flex items-center gap-3.5 py-4 px-5 border-b border-gray-100 last:border-b-0",
-        onClick && "cursor-pointer",
+        "flex items-center gap-3.5 py-4 px-5 border-b border-border-subtle last:border-b-0",
+        onClick && "cursor-pointer hover:bg-surface-hover",
         className
       )}
       onClick={onClick}
@@ -36,7 +36,7 @@ function ListItem({ children, className, onClick }: ListItemProps) {
 }
 
 function ListDivider() {
-  return <div className="h-px bg-gray-100 mx-5" />;
+  return <div className="h-px bg-border-subtle mx-5" />;
 }
 
 List.Item = ListItem;

@@ -12,7 +12,7 @@ export default function StatusPill({ variant = "default", children, className }:
       className={clsx(
         "badge",
         variant === "primary" && "badge-primary",
-        variant === "black" && "bg-black text-white",
+        variant === "black" && "badge-black",
         variant === "default" && "badge-gray",
         className
       )}

@@ -33,8 +33,8 @@ export default function AIAnalysis({ onComplete }: Props) {
   return (
     <div>
       <div className="text-center pt-8 pb-2.5">
-        <h2 className="text-[22px] font-bold mb-2">AI가 분석하고 있습니다</h2>
-        <p className="text-sm text-gray-500">잠시만 기다려주세요</p>
+        <h2 className="text-[22px] font-bold text-text-heading mb-2 tracking-[-0.02em]">AI가 분석하고 있습니다</h2>
+        <p className="text-sm text-text-muted">잠시만 기다려주세요</p>
       </div>
       <div className="py-5">
         {STEPS.map((text, i) => {
@@ -53,7 +53,7 @@ export default function AIAnalysis({ onComplete }: Props) {
                   "w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-300",
                   isDone && "bg-primary border-primary",
                   isActive && "border-primary",
-                  !isDone && !isActive && "border-gray-300"
+                  !isDone && !isActive && "border-border"
                 )}
               >
                 {isDone ? (
@@ -61,10 +61,10 @@ export default function AIAnalysis({ onComplete }: Props) {
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 ) : isActive ? (
-                  <div className="w-5 h-5 border-2 border-gray-200 border-t-primary rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-border border-t-primary rounded-full animate-spin" />
                 ) : null}
               </div>
-              <span className={clsx("text-[15px] font-medium", isDone || isActive ? "text-black" : "text-gray-500")}>
+              <span className={clsx("text-[15px] font-medium", isDone || isActive ? "text-text-body" : "text-text-muted")}>
                 {text}
               </span>
             </div>

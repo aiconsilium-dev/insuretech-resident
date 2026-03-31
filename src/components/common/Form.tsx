@@ -27,7 +27,7 @@ function FormField({ children, className }: { children: ReactNode; className?: s
 
 function FormLabel({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <label className={clsx("block text-sm font-semibold text-black mb-2", className)}>
+    <label className={clsx("block text-sm font-semibold text-text-body mb-2", className)}>
       {children}
     </label>
   );
