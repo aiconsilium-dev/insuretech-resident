@@ -19,22 +19,22 @@ interface ClaimTypeOption {
 }
 
 const CLAIM_TYPES: ClaimTypeOption[] = [
-  { type: "facility", title: "시설하자", desc: "건물 균열, 방수불량, 배관 등", symbol: "■", color: "#00854A", completionMsg: "현장조사가 배정됩니다" },
-  { type: "leak", title: "누수피해", desc: "누수로 인한 재물 피해", symbol: "●", color: "#0061AF", completionMsg: "현장 누수원인 조사가 진행됩니다" },
-  { type: "injury", title: "신체손해", desc: "시설물로 인한 인명피해", symbol: "◆", color: "#C9252C", completionMsg: "대인 보상 심사가 진행됩니다 (자기부담금 없음)" },
-  { type: "fire", title: "화재·폭발", desc: "화재, 가스폭발 등", symbol: "▲", color: "#F47920", completionMsg: "화재증명원 확인 후 처리됩니다" },
+  { type: "facility", title: "균열·파손", desc: "유리창 파손, 벽면 균열, 타일 깨짐 등", symbol: "■", color: "#00854A", completionMsg: "현장조사가 배정됩니다" },
+  { type: "leak", title: "누수·침수", desc: "천장·벽에서 물이 새는 경우", symbol: "●", color: "#0061AF", completionMsg: "현장 누수원인 조사가 진행됩니다" },
+  { type: "injury", title: "다침·부상", desc: "미끄러짐, 넘어짐, 물건 낙하 등", symbol: "◆", color: "#C9252C", completionMsg: "대인 보상 심사가 진행됩니다 (자기부담금 없음)" },
+  { type: "fire", title: "화재·폭발", desc: "불이 나거나 폭발이 발생한 경우", symbol: "▲", color: "#F47920", completionMsg: "화재증명원 확인 후 처리됩니다" },
 ];
 
 /* ─── 시설하자 옵션 ─── */
 const DEFECT_TYPES = [
-  { id: "structure", label: "구조체", desc: "균열, 철근, 콘크리트" },
-  { id: "finish", label: "마감", desc: "도배, 타일, 창호, 방수" },
-  { id: "mep", label: "설비", desc: "급배수, 난방, 전기, 소방" },
-  { id: "civil", label: "토목·조경", desc: "옹벽, 주차장, 조경" },
+  { id: "structure", label: "벽·천장 균열", desc: "벽면·천장 금, 콘크리트 깨짐" },
+  { id: "finish", label: "타일·유리 파손", desc: "타일 깨짐, 유리창 파손, 도배 들뜸" },
+  { id: "mep", label: "배관·설비 고장", desc: "수도, 난방, 전기, 환기 문제" },
+  { id: "civil", label: "방수 불량", desc: "외벽 방수, 창틀 방수 문제" },
 ];
 
 /* ─── 누수피해 옵션 ─── */
-const LEAK_LOCATIONS = ["내 세대", "아래층 세대", "공용부"];
+const LEAK_LOCATIONS = ["내 세대", "아래층 세대"];
 const LEAK_CAUSES = ["상층 세대 배관", "공용 급배수", "방수층 불량", "원인 불명"];
 const LEAK_DAMAGES = ["천장", "벽면", "바닥(장판)", "가전·가구", "기타"];
 
@@ -343,7 +343,7 @@ export default function ClaimPage() {
         </div>
 
         <button
-          className="btn btn-primary btn-full !rounded-full"
+          className="btn btn-primary btn-full !rounded-full !py-4 !text-base !font-bold"
           disabled={!claimType}
           onClick={() => { setStep(1); scrollTop(); }}
         >
@@ -365,11 +365,11 @@ export default function ClaimPage() {
         {/* ── TYPE A: 시설하자 ── */}
         {claimType === "facility" && (
           <>
-            <h2 className="text-[22px] font-bold text-text-heading mb-2 tracking-[-0.02em]">시설하자 상세</h2>
-            <p className="text-sm text-text-muted mb-6">하자 유형과 위치를 선택하고 사진을 촬영해주세요</p>
+            <h2 className="text-[22px] font-bold text-text-heading mb-2 tracking-[-0.02em]">어떤 파손이 발생했나요?</h2>
+            <p className="text-sm text-text-muted mb-6">파손 유형을 선택하고 사진을 찍어주세요</p>
 
             <div className="mb-5">
-              <SectionLabel>하자 유형</SectionLabel>
+              <SectionLabel>파손 유형</SectionLabel>
               <SelectGrid
                 items={DEFECT_TYPES.map(d => ({ id: d.id, label: d.label, desc: d.desc }))}
                 selected={defectType}
@@ -379,9 +379,9 @@ export default function ClaimPage() {
             </div>
 
             <div className="mb-5">
-              <SectionLabel>하자 위치</SectionLabel>
+              <SectionLabel>어디에서 발생했나요?</SectionLabel>
               <OptionButtons
-                options={["전용부(세대 내)", "공용부(복도, 주차장 등)"]}
+                options={["거실·방", "주방·욕실", "베란다·발코니", "현관"]}
                 selected={defectLocation}
                 onSelect={setDefectLocation}
                 color="#00854A"
@@ -409,7 +409,7 @@ export default function ClaimPage() {
             </div>
 
             <button
-              className="btn btn-full !rounded-full text-white"
+              className="btn btn-full !rounded-full text-white !py-4 !text-base !font-bold"
               style={{ backgroundColor: "#00854A" }}
               disabled={!defectType || !defectLocation}
               onClick={() => { setStep(2); setAiAnalysisDone(false); scrollTop(); }}
@@ -466,7 +466,7 @@ export default function ClaimPage() {
             </div>
 
             <button
-              className="btn btn-full !rounded-full text-white"
+              className="btn btn-full !rounded-full text-white !py-4 !text-base !font-bold"
               style={{ backgroundColor: "#0061AF" }}
               disabled={!leakLocation || !leakCause || leakDamages.length === 0}
               onClick={() => { setSubmitted(true); }}
@@ -537,7 +537,7 @@ export default function ClaimPage() {
             </div>
 
             <button
-              className="btn btn-full !rounded-full text-white"
+              className="btn btn-full !rounded-full text-white !py-4 !text-base !font-bold"
               style={{ backgroundColor: "#C9252C" }}
               disabled={!injuryType || !injuryPlace || !victimName || !treatmentStatus}
               onClick={() => { setSubmitted(true); }}
@@ -607,7 +607,7 @@ export default function ClaimPage() {
             </div>
 
             <button
-              className="btn btn-full !rounded-full text-white"
+              className="btn btn-full !rounded-full text-white !py-4 !text-base !font-bold"
               style={{ backgroundColor: "#F47920" }}
               disabled={!fireType || fireReported === null || !fireDamageScope}
               onClick={() => { setSubmitted(true); }}
@@ -636,7 +636,7 @@ export default function ClaimPage() {
 
         {aiAnalysisDone && (
           <button
-            className="btn btn-full !rounded-full text-white mt-5"
+            className="btn btn-full !rounded-full text-white mt-5 !py-4 !text-base !font-bold"
             style={{ backgroundColor: "#00854A" }}
             onClick={() => setSubmitted(true)}
           >
@@ -676,7 +676,7 @@ export default function ClaimPage() {
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <button className="btn btn-primary btn-full !rounded-full" onClick={handleSubmitConfirm}>확인</button>
+          <button className="btn btn-primary btn-full !rounded-full !py-4 !text-base !font-bold" onClick={handleSubmitConfirm}>확인</button>
         </Modal.Footer>
       </Modal>
     </div>
