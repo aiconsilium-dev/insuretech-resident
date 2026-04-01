@@ -22,8 +22,8 @@ function Card({ children, variant = "default", className, onClick }: CardProps) 
           "card",
           variant === "outlined" && "border border-border shadow-none",
           variant === "elevated" && "shadow-md",
-          variant === "accent" && "border-l-4 border-l-[#00854A] border border-border shadow-none",
-          variant === "info" && "border-l-4 border-l-[#0061AF] border border-border shadow-none",
+          variant === "accent" && "border border-border shadow-none",
+          variant === "info" && "border border-border shadow-none",
           onClick && "cursor-pointer active:scale-[0.98] transition-transform",
           className
         )}

@@ -23,7 +23,7 @@ export default function HomePage() {
 
       <div className="px-[var(--space-page)] pt-3">
         {/* 간편 보험 접수 — 메인 CTA */}
-        <Card className="mb-3 cursor-pointer transition-all hover:-translate-y-0.5 border-l-[3px] border-l-[#C9252C]" onClick={() => navigate("/claim")}>
+        <Card className="mb-3 cursor-pointer transition-all hover:-translate-y-0.5" onClick={() => navigate("/claim")}>
           <Card.Body className="!py-4 flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-[12px] flex items-center justify-center shrink-0" style={{ background: "rgba(201,37,44,0.08)" }}>
               <span className="text-[#C9252C] text-lg">◆</span>
