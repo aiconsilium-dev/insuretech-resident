@@ -42,9 +42,18 @@ export default function ResultCard({ damageType, ownerType, onSubmit }: Props) {
 
   return (
     <div>
-      <div className="text-center mb-6">
-        <h2 className="text-[22px] font-bold text-text-heading mb-1 tracking-[-0.02em]">AI 분석 완료</h2>
-        <p className="text-sm text-text-muted">{DAMAGE_LABELS[damageType]}</p>
+      {/* DB Green Gradient 헤더 */}
+      <div
+        className="rounded-xl p-5 mb-6 text-center"
+        style={{ background: "linear-gradient(135deg, #8DC63F 0%, #009559 100%)" }}
+      >
+        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <h2 className="text-[22px] font-bold text-white mb-1 tracking-[-0.02em]">AI 분석 완료</h2>
+        <p className="text-sm text-white/80">{DAMAGE_LABELS[damageType]}</p>
       </div>
 
       <div className="flex gap-2 mb-5">
@@ -60,7 +69,7 @@ export default function ResultCard({ damageType, ownerType, onSubmit }: Props) {
 
       <div className="text-center py-6 mb-5">
         <div className="text-sm text-text-muted mb-1.5">예상 보상금액</div>
-        <div className="text-4xl font-extrabold text-text-heading tracking-[-0.5px]">
+        <div className="text-4xl font-extrabold tracking-[-0.5px]" style={{ color: amount > 0 ? "#00854A" : "#171717" }}>
           {amount > 0 ? `${amount.toLocaleString()}원` : "별도 산정"}
         </div>
         <div className="text-[13px] text-text-muted mt-2">

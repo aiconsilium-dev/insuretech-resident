@@ -46,6 +46,17 @@ const TYPE_SYMBOLS: Record<string, string> = {
   injury: "◆",
 };
 
+// statusStep 기준: 3이상=완료, 1=진행중, 0=에러/대기
+function getStatusStyle(claim: ClaimRecord): { borderColor: string; iconBg: string; iconColor: string } {
+  if (claim.statusStep >= 3) {
+    return { borderColor: "#00854A", iconBg: "rgba(0,133,74,0.1)", iconColor: "#00854A" };
+  }
+  if (claim.statusStep >= 1) {
+    return { borderColor: "#0061AF", iconBg: "rgba(0,97,175,0.1)", iconColor: "#0061AF" };
+  }
+  return { borderColor: "#C9252C", iconBg: "rgba(201,37,44,0.1)", iconColor: "#C9252C" };
+}
+
 export default function HistoryPage() {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
@@ -56,84 +67,102 @@ export default function HistoryPage() {
         <p className="text-sm text-text-muted mt-1">총 {CLAIMS.length}건의 접수 내역</p>
       </div>
 
-      {CLAIMS.map((claim, idx) => (
-        <Card
-          key={claim.id}
-          variant="outlined"
-          className="mb-3.5 !p-5"
-          onClick={() => setOpenIdx(openIdx === idx ? null : idx)}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[10px] bg-bg-secondary flex items-center justify-center text-text-heading text-base">
-                {TYPE_SYMBOLS[claim.damageType] || "●"}
+      {CLAIMS.map((claim, idx) => {
+        const style = getStatusStyle(claim);
+        return (
+          <div
+            key={claim.id}
+            className="mb-3.5 rounded-[var(--radius-card)] border bg-[var(--color-surface)] shadow-[var(--shadow-card)] cursor-pointer active:scale-[0.98] transition-transform overflow-hidden"
+            style={{ borderLeftWidth: 4, borderLeftColor: style.borderColor, borderTopColor: "#e5e5e5", borderRightColor: "#e5e5e5", borderBottomColor: "#e5e5e5" }}
+            onClick={() => setOpenIdx(openIdx === idx ? null : idx)}
+          >
+            <div className="p-5">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-[10px] flex items-center justify-center text-base"
+                    style={{ background: style.iconBg, color: style.iconColor }}
+                  >
+                    {TYPE_SYMBOLS[claim.damageType] || "●"}
+                  </div>
+                  <div>
+                    <div className="text-[13px] text-text-muted font-medium">{claim.id}</div>
+                    <div className="text-[15px] font-semibold text-text-body mt-0.5">{claim.type}</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Badge variant={claim.typeClass === "C" ? "primary" : "black"}>
+                    TYPE {claim.typeClass}
+                  </Badge>
+                  <div className="text-xs text-text-dim mt-1.5">{claim.date}</div>
+                </div>
               </div>
-              <div>
-                <div className="text-[13px] text-text-muted font-medium">{claim.id}</div>
-                <div className="text-[15px] font-semibold text-text-body mt-0.5">{claim.type}</div>
+
+              {/* Progress */}
+              <div className="mt-3.5 pt-3.5 border-t border-border-subtle">
+                <StatusSteps>
+                  {PROGRESS_LABELS.map((label, i) => (
+                    <StatusSteps.Step
+                      key={label}
+                      label={label}
+                      status={i < claim.statusStep ? "done" : i === claim.statusStep ? "current" : "pending"}
+                    />
+                  ))}
+                </StatusSteps>
               </div>
-            </div>
-            <div className="text-right">
-              <Badge variant={claim.typeClass === "C" ? "primary" : "black"}>
-                TYPE {claim.typeClass}
-              </Badge>
-              <div className="text-xs text-text-dim mt-1.5">{claim.date}</div>
+
+              {/* Detail */}
+              {openIdx === idx && (
+                <div className="mt-3.5 pt-3.5 border-t border-border-subtle">
+                  <DetailRow label="접수번호" value={claim.id} />
+                  <DetailRow label="피해유형" value={claim.detail.desc} />
+                  <DetailRow
+                    label="분류"
+                    value={
+                      claim.typeClass === "C"
+                        ? "TYPE C - 보험금 산출"
+                        : claim.typeClass === "A"
+                          ? "TYPE A - 시공사 하자"
+                          : "TYPE B - 면책 검토"
+                    }
+                    valueClass={claim.typeClass === "C" ? "text-[#00854A]" : undefined}
+                  />
+                  <DetailRow label="현재 상태" value={claim.status === "산정" ? "적산완료" : claim.status === "검토" ? (claim.typeClass === "A" ? "조사중" : "승인대기") : claim.status} />
+                  {claim.detail.inspection && (
+                    <DetailRow label="현장조사" value={claim.detail.inspection} />
+                  )}
+                  {claim.detail.amount && (
+                    <DetailRow label="AI 산출액" value={claim.detail.amount} valueClass="font-bold" style={{ color: "#00854A" }} />
+                  )}
+                  {claim.typeClass === "A" && !claim.detail.amount && (
+                    <DetailRow label="비고" value="하자보수 청구 진행 예정" />
+                  )}
+                </div>
+              )}
             </div>
           </div>
-
-          {/* Progress */}
-          <div className="mt-3.5 pt-3.5 border-t border-border-subtle">
-            <StatusSteps>
-              {PROGRESS_LABELS.map((label, i) => (
-                <StatusSteps.Step
-                  key={label}
-                  label={label}
-                  status={i < claim.statusStep ? "done" : i === claim.statusStep ? "current" : "pending"}
-                />
-              ))}
-            </StatusSteps>
-          </div>
-
-          {/* Detail */}
-          {openIdx === idx && (
-            <div className="mt-3.5 pt-3.5 border-t border-border-subtle">
-              <DetailRow label="접수번호" value={claim.id} />
-              <DetailRow label="피해유형" value={claim.detail.desc} />
-              <DetailRow
-                label="분류"
-                value={
-                  claim.typeClass === "C"
-                    ? "TYPE C - 보험금 산출"
-                    : claim.typeClass === "A"
-                      ? "TYPE A - 시공사 하자"
-                      : "TYPE B - 면책 검토"
-                }
-                valueClass={claim.typeClass === "C" ? "text-accent" : undefined}
-              />
-              <DetailRow label="현재 상태" value={claim.status === "산정" ? "적산완료" : claim.status === "검토" ? (claim.typeClass === "A" ? "조사중" : "승인대기") : claim.status} />
-              {claim.detail.inspection && (
-                <DetailRow label="현장조사" value={claim.detail.inspection} />
-              )}
-              {claim.detail.amount && (
-                <DetailRow label="AI 산출액" value={claim.detail.amount} valueClass="text-text-heading font-bold" />
-              )}
-              {claim.typeClass === "A" && !claim.detail.amount && (
-                <DetailRow label="비고" value="하자보수 청구 진행 예정" />
-              )}
-            </div>
-          )}
-        </Card>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
-function DetailRow({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
+function DetailRow({
+  label,
+  value,
+  valueClass,
+  style,
+}: {
+  label: string;
+  value: string;
+  valueClass?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <div className="flex justify-between py-2 text-sm">
       <span className="text-text-muted">{label}</span>
-      <span className={clsx("font-semibold text-text-body", valueClass)}>{value}</span>
+      <span className={clsx("font-semibold text-text-body", valueClass)} style={style}>{value}</span>
     </div>
   );
 }

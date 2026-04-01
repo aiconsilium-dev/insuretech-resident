@@ -192,11 +192,11 @@
     padding: 4px 10px;
     border-radius: var(--radius-pill);
   }
-  .badge-primary { background: rgba(0, 133, 74, 0.08); color: #00854A; }
-  .badge-success { background: rgba(0, 149, 89, 0.08); color: #009559; }
+  .badge-primary { background: rgba(0, 133, 74, 0.12); color: #00854A; border: 1px solid rgba(0, 133, 74, 0.2); }
+  .badge-success { background: linear-gradient(135deg, rgba(141,198,63,0.15) 0%, rgba(0,149,89,0.15) 100%); color: #009559; border: 1px solid rgba(0,149,89,0.25); }
   .badge-warning { background: var(--color-warning-light); color: #d97706; }
-  .badge-danger { background: rgba(201, 37, 44, 0.08); color: #C9252C; }
-  .badge-info { background: rgba(20, 177, 231, 0.08); color: #0061AF; }
+  .badge-danger { background: rgba(201, 37, 44, 0.1); color: #C9252C; border: 1px solid rgba(201,37,44,0.2); }
+  .badge-info { background: rgba(0, 97, 175, 0.1); color: #0061AF; border: 1px solid rgba(0,97,175,0.2); }
   .badge-gray { background: var(--color-bg-secondary); color: var(--color-text-muted); }
   .badge-black { background: var(--color-primary); color: #ffffff; }
 
@@ -249,7 +249,7 @@
     font-weight: 500;
   }
   .status-step-dot {
-    width: 10px; height: 10px;
+    width: 12px; height: 12px;
     border-radius: 50%;
     background: var(--color-border);
     margin: 0 auto 4px;
@@ -257,10 +257,10 @@
     z-index: 1;
     transition: all 0.3s;
   }
-  .status-step.done .status-step-dot { background: #00854A; }
-  .status-step.done { color: var(--color-text-body); }
-  .status-step.current .status-step-dot { background: #00854A; box-shadow: 0 0 0 3px rgba(0, 133, 74, 0.15); }
-  .status-step.current { color: var(--color-text-heading); font-weight: 700; }
+  .status-step.done .status-step-dot { background: #00854A; box-shadow: 0 0 0 2px rgba(0, 133, 74, 0.2); }
+  .status-step.done { color: #00854A; font-weight: 600; }
+  .status-step.current .status-step-dot { background: white; border: 3px solid #0061AF; box-shadow: 0 0 0 3px rgba(0, 97, 175, 0.2); }
+  .status-step.current { color: #0061AF; font-weight: 700; }
 
   /* ── Tab Bar ── */
   .tab-bar {
