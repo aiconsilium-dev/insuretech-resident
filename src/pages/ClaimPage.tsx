@@ -2,7 +2,6 @@ import { useState, useCallback } from "react";
 import { useApp } from "@/contexts/AppContext";
 import StepIndicator from "@/components/common/StepIndicator";
 import PhotoCapture from "@/components/common/PhotoCapture";
-import Modal from "@/components/common/Modal";
 import clsx from "clsx";
 import { useNavigate } from "react-router-dom";
 
@@ -46,6 +45,106 @@ const TREATMENT_STATUS = ["통원", "입원", "수술"];
 /* ─── 화재 옵션 ─── */
 const FIRE_TYPES = ["전기 화재", "가스 폭발", "방화", "기타"];
 const FIRE_DAMAGE_SCOPE = ["대물만", "대인만", "대물+대인"];
+
+/* ─── AI 적산 데이터 (균열·파손) ─── */
+interface EstimationItem {
+  name: string;
+  qty: string;
+  unitPrice: number;
+  total: number;
+}
+interface EstimationData {
+  items: EstimationItem[];
+  damageTotal: number;
+  deductible: number;
+  insurance: number;
+}
+
+const FACILITY_ESTIMATION: Record<string, EstimationData> = {
+  structure: {
+    items: [
+      { name: "균열 보수(V커팅+충전)", qty: "5m", unitPrice: 18000, total: 90000 },
+      { name: "도배 재시공", qty: "15㎡", unitPrice: 12000, total: 180000 },
+      { name: "부자재", qty: "1식", unitPrice: 50000, total: 50000 },
+    ],
+    damageTotal: 320000,
+    deductible: 100000,
+    insurance: 220000,
+  },
+  finish: {
+    items: [
+      { name: "타일 철거·재시공", qty: "12㎡", unitPrice: 35000, total: 420000 },
+      { name: "방수 보수", qty: "8㎡", unitPrice: 28000, total: 224000 },
+      { name: "부자재·폐기물", qty: "1식", unitPrice: 80000, total: 80000 },
+    ],
+    damageTotal: 724000,
+    deductible: 100000,
+    insurance: 624000,
+  },
+  mep: {
+    items: [
+      { name: "배관 교체", qty: "3m", unitPrice: 45000, total: 135000 },
+      { name: "마감 복구", qty: "1식", unitPrice: 120000, total: 120000 },
+      { name: "설비 부품", qty: "1식", unitPrice: 85000, total: 85000 },
+    ],
+    damageTotal: 340000,
+    deductible: 100000,
+    insurance: 240000,
+  },
+  civil: {
+    items: [
+      { name: "방수층 재시공", qty: "20㎡", unitPrice: 32000, total: 640000 },
+      { name: "마감 복구", qty: "1식", unitPrice: 150000, total: 150000 },
+      { name: "부자재", qty: "1식", unitPrice: 60000, total: 60000 },
+    ],
+    damageTotal: 850000,
+    deductible: 100000,
+    insurance: 750000,
+  },
+};
+
+/* ─── AI 적산 데이터 (누수) ─── */
+const LEAK_DAMAGE_COSTS: Record<string, { items: { name: string; qty: string; unitPrice: number; total: number }[]; subtotal: number }> = {
+  "천장": {
+    items: [
+      { name: "도배", qty: "12㎡", unitPrice: 12000, total: 144000 },
+      { name: "석고보드 교체", qty: "4㎡", unitPrice: 25000, total: 100000 },
+    ],
+    subtotal: 244000,
+  },
+  "벽면": {
+    items: [
+      { name: "도배", qty: "20㎡", unitPrice: 12000, total: 240000 },
+    ],
+    subtotal: 240000,
+  },
+  "바닥(장판)": {
+    items: [
+      { name: "장판 교체", qty: "15㎡", unitPrice: 18000, total: 270000 },
+    ],
+    subtotal: 270000,
+  },
+  "가전·가구": {
+    items: [
+      { name: "중고가 감가 산정", qty: "1식", unitPrice: 300000, total: 300000 },
+    ],
+    subtotal: 300000,
+  },
+  "기타": {
+    items: [
+      { name: "기타 피해", qty: "1식", unitPrice: 100000, total: 100000 },
+    ],
+    subtotal: 100000,
+  },
+};
+
+/* ─── 유형별 다음 단계 ─── */
+const NEXT_STEPS: Record<ClaimType, string[]> = {
+  facility: ["현장조사 배정 (1~3일)", "손해사정 확정", "보험금 지급"],
+  leak: ["누수원인 조사 (3~5일)", "책임소재 판단", "수리비 확정", "보험금 지급"],
+  injury: ["서류 검토 (3~5일)", "손해사정사 심사", "대인 보상금 확정"],
+  fire: ["화재증명원 확인 (5~7일)", "현장 감정", "보험금 확정"],
+};
 
 /* ─── 공용 컴포넌트: 뒤로가기 헤더 ─── */
 function BackHeader({ onBack, title }: { onBack: () => void; title: string }) {
@@ -152,22 +251,28 @@ function CheckList({ options, selected, onToggle, color }: {
   );
 }
 
-/* ─── 공용 컴포넌트: AI 분석 애니메이션 ─── */
-function AIAnalysisStep({ defectType, onComplete }: { defectType: string; onComplete: () => void }) {
+/* ─── 숫자 포맷 ─── */
+function fmt(n: number) {
+  return n.toLocaleString("ko-KR");
+}
+
+/* ─── AI 분석 + 적산 결과 (균열·파손) ─── */
+function FacilityAIResult({ defectType, defectLocation, onReady }: {
+  defectType: string;
+  defectLocation: string;
+  onReady: () => void;
+}) {
   const [phase, setPhase] = useState(0); // 0: 분석중, 1: 완료
 
   useState(() => {
     const timer = setTimeout(() => {
       setPhase(1);
-      onComplete();
+      onReady();
     }, 2500);
     return () => clearTimeout(timer);
   });
 
-  const costRange = defectType === "structure" ? "500만 ~ 2,000만원" :
-    defectType === "finish" ? "100만 ~ 800만원" :
-    defectType === "mep" ? "200만 ~ 1,500만원" : "300만 ~ 1,200만원";
-
+  const est = FACILITY_ESTIMATION[defectType];
   const defectLabel = DEFECT_TYPES.find(d => d.id === defectType)?.label ?? defectType;
 
   if (phase === 0) {
@@ -184,28 +289,126 @@ function AIAnalysisStep({ defectType, onComplete }: { defectType: string; onComp
 
   return (
     <div className="card border p-5">
+      {/* 헤더 */}
       <div className="flex items-center gap-2 mb-4">
         <div className="w-8 h-8 rounded-full bg-[#00854A] flex items-center justify-center">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
-        <h3 className="text-base font-bold text-text-heading">AI 분석 완료</h3>
+        <h3 className="text-base font-bold text-text-heading">AI 분석 결과</h3>
       </div>
-      <div className="space-y-3">
+
+      {/* 하자 분류 + 위치 */}
+      <div className="space-y-2 mb-4">
         <div className="flex justify-between items-center py-2 border-b border-border-subtle">
           <span className="text-sm text-text-muted">하자 분류</span>
           <span className="text-sm font-semibold text-text-heading">{defectLabel}</span>
         </div>
         <div className="flex justify-between items-center py-2 border-b border-border-subtle">
-          <span className="text-sm text-text-muted">예상 보수비용</span>
-          <span className="text-sm font-bold" style={{ color: "#00854A" }}>{costRange}</span>
-        </div>
-        <div className="flex justify-between items-center py-2">
-          <span className="text-sm text-text-muted">현장조사</span>
-          <span className="badge badge-primary">필수</span>
+          <span className="text-sm text-text-muted">위치</span>
+          <span className="text-sm font-semibold text-text-heading">{defectLocation}</span>
         </div>
       </div>
+
+      {/* 공종별 적산 */}
+      <div className="bg-bg-secondary rounded-[var(--radius-card)] p-4 mb-4">
+        <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3">공종별 적산</h4>
+        <div className="space-y-2">
+          {est.items.map((item, i) => (
+            <div key={i} className="flex items-center justify-between text-sm">
+              <div className="flex-1">
+                <span className="text-text-body">{item.name}</span>
+                <span className="text-text-muted ml-1.5 text-xs">{item.qty} × @{fmt(item.unitPrice)}</span>
+              </div>
+              <span className="font-medium text-text-heading tabular-nums">{fmt(item.total)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 금액 요약 */}
+      <div className="space-y-2 pt-2 border-t border-border">
+        <div className="flex justify-between text-sm">
+          <span className="text-text-muted">손해액 합계</span>
+          <span className="font-semibold text-text-heading">{fmt(est.damageTotal)}원</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-text-muted">자기부담금</span>
+          <span className="text-text-dim">-{fmt(est.deductible)}원</span>
+        </div>
+        <div className="flex justify-between text-base pt-2 border-t border-border">
+          <span className="font-bold text-text-heading">예상 보험금</span>
+          <span className="font-bold text-[#00854A] text-lg">{fmt(est.insurance)}원</span>
+        </div>
+      </div>
+
+      <p className="text-xs text-text-muted mt-4 text-center">※ 현장조사 후 최종 확정됩니다</p>
+    </div>
+  );
+}
+
+/* ─── AI 적산 결과 (누수) ─── */
+function LeakAIResult({ leakDamages }: { leakDamages: string[] }) {
+  const allItems: { name: string; qty: string; unitPrice: number; total: number }[] = [];
+  let damageTotal = 0;
+
+  for (const dmg of leakDamages) {
+    const cost = LEAK_DAMAGE_COSTS[dmg];
+    if (cost) {
+      allItems.push(...cost.items);
+      damageTotal += cost.subtotal;
+    }
+  }
+
+  const deductible = 100000;
+  const insurance = Math.max(0, damageTotal - deductible);
+
+  return (
+    <div className="card border p-5">
+      {/* 헤더 */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-8 h-8 rounded-full bg-[#0061AF] flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <h3 className="text-base font-bold text-text-heading">AI 피해 산정 결과</h3>
+      </div>
+
+      {/* 피해범위별 적산 */}
+      <div className="bg-bg-secondary rounded-[var(--radius-card)] p-4 mb-4">
+        <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3">피해범위별 적산</h4>
+        <div className="space-y-2">
+          {allItems.map((item, i) => (
+            <div key={i} className="flex items-center justify-between text-sm">
+              <div className="flex-1">
+                <span className="text-text-body">{item.name}</span>
+                <span className="text-text-muted ml-1.5 text-xs">{item.qty} × @{fmt(item.unitPrice)}</span>
+              </div>
+              <span className="font-medium text-text-heading tabular-nums">{fmt(item.total)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 금액 요약 */}
+      <div className="space-y-2 pt-2 border-t border-border">
+        <div className="flex justify-between text-sm">
+          <span className="text-text-muted">손해액 합계</span>
+          <span className="font-semibold text-text-heading">{fmt(damageTotal)}원</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-text-muted">자기부담금</span>
+          <span className="text-text-dim">-{fmt(deductible)}원</span>
+        </div>
+        <div className="flex justify-between text-base pt-2 border-t border-border">
+          <span className="font-bold text-text-heading">예상 보험금</span>
+          <span className="font-bold text-[#0061AF] text-lg">{fmt(insurance)}원</span>
+        </div>
+      </div>
+
+      <p className="text-xs text-text-muted mt-4 text-center">※ 현장 누수원인 조사 후 최종 확정됩니다</p>
     </div>
   );
 }
@@ -235,6 +438,7 @@ export default function ClaimPage() {
   const [leakDamages, setLeakDamages] = useState<string[]>([]);
   const [leakPhotos, setLeakPhotos] = useState<(string | null)[]>([null, null, null]);
   const [leakAmount, setLeakAmount] = useState("");
+  const [leakAiReady, setLeakAiReady] = useState(false);
 
   // ── 신체손해 (TYPE C) 상태 ──
   const [injuryType, setInjuryType] = useState<string | null>(null);
@@ -253,7 +457,25 @@ export default function ClaimPage() {
   const [fireCertDoc, setFireCertDoc] = useState<(string | null)[]>([null]);
 
   // 접수번호 생성
-  const claimNumber = `CLM-${String(Date.now()).slice(-6)}`;
+  const [claimNumber] = useState(() => `CLM-${String(Date.now()).slice(-6)}`);
+
+  // AI 계산 가능 여부
+  const isAICalculable = claimType === "facility" || claimType === "leak";
+
+  // 예상 보험금 계산
+  function getInsuranceAmount(): number | null {
+    if (claimType === "facility" && defectType) {
+      return FACILITY_ESTIMATION[defectType]?.insurance ?? null;
+    }
+    if (claimType === "leak" && leakDamages.length > 0) {
+      let total = 0;
+      for (const dmg of leakDamages) {
+        total += LEAK_DAMAGE_COSTS[dmg]?.subtotal ?? 0;
+      }
+      return Math.max(0, total - 100000);
+    }
+    return null;
+  }
 
   function resetAll() {
     setClaimType(null);
@@ -269,6 +491,7 @@ export default function ClaimPage() {
     setLeakDamages([]);
     setLeakPhotos([null, null, null]);
     setLeakAmount("");
+    setLeakAiReady(false);
     setInjuryType(null);
     setInjuryPlace(null);
     setVictimName("");
@@ -283,11 +506,6 @@ export default function ClaimPage() {
     setFireCertDoc([null]);
   }
 
-  function handleSubmitConfirm() {
-    resetAll();
-    navigate("/myclaims");
-  }
-
   function goBack() {
     if (step === 0) navigate("/");
     else if (step === 2) setStep(1);
@@ -295,8 +513,109 @@ export default function ClaimPage() {
   }
 
   const currentType = CLAIM_TYPES.find((t) => t.type === claimType);
-  const totalSteps = claimType === "facility" ? 3 : 2;
+  const totalSteps = (claimType === "facility" || claimType === "leak") ? 3 : 2;
   const scrollTop = () => window.scrollTo(0, 0);
+
+  // ════════════════════════════════════
+  // 접수 완료 전용 화면 (모달이 아닌 페이지)
+  // ════════════════════════════════════
+  if (submitted) {
+    const insuranceAmt = getInsuranceAmount();
+    const steps = claimType ? NEXT_STEPS[claimType] : [];
+    const color = currentType?.color ?? "#00854A";
+
+    return (
+      <div className="animate-[fadeIn_0.25s_ease] px-[var(--space-page)] pt-[var(--space-page)] pb-24">
+        <div className="text-center pt-8 pb-6">
+          {/* 체크 아이콘 */}
+          <div
+            className="w-16 h-16 rounded-full mx-auto mb-5 flex items-center justify-center"
+            style={{ backgroundColor: color }}
+          >
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <h2 className="text-[22px] font-bold text-text-heading mb-1">접수 완료</h2>
+          <p className="text-sm text-text-muted">보험금 청구가 정상적으로 접수되었습니다</p>
+        </div>
+
+        {/* 접수 요약 카드 */}
+        <div className="card border p-5 mb-5">
+          <div className="space-y-3">
+            <div className="flex justify-between items-center py-1.5">
+              <span className="text-sm text-text-muted">접수번호</span>
+              <span className="text-sm font-bold text-text-heading">{claimNumber}</span>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-t border-border-subtle">
+              <span className="text-sm text-text-muted">유형</span>
+              <span
+                className="text-sm font-semibold px-2.5 py-0.5 rounded-full"
+                style={{ backgroundColor: `${color}12`, color }}
+              >
+                {currentType?.title}
+              </span>
+            </div>
+            {isAICalculable && insuranceAmt !== null && (
+              <div className="flex justify-between items-center py-1.5 border-t border-border-subtle">
+                <span className="text-sm text-text-muted">예상 보험금</span>
+                <span className="text-base font-bold" style={{ color }}>{fmt(insuranceAmt)}원</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 다음 단계 */}
+        <div className="card border p-5 mb-8">
+          <h3 className="text-sm font-bold text-text-heading mb-4">다음 단계</h3>
+          <div className="relative pl-6">
+            {steps.map((s, i) => (
+              <div key={i} className="relative pb-4 last:pb-0">
+                {/* 세로 라인 */}
+                {i < steps.length - 1 && (
+                  <div className="absolute left-[-16px] top-[22px] w-[2px] h-[calc(100%-8px)] bg-border" />
+                )}
+                {/* 원형 번호 */}
+                <div
+                  className="absolute left-[-22px] top-[2px] w-[14px] h-[14px] rounded-full border-2 flex items-center justify-center text-[8px] font-bold"
+                  style={
+                    i === 0
+                      ? { backgroundColor: color, borderColor: color, color: "#fff" }
+                      : { backgroundColor: "var(--color-bg)", borderColor: "var(--color-border)", color: "var(--color-text-muted)" }
+                  }
+                >
+                  {i + 1}
+                </div>
+                <p className={clsx(
+                  "text-sm",
+                  i === 0 ? "font-semibold text-text-heading" : "text-text-muted"
+                )}>
+                  {s}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 하단 버튼 */}
+        <div className="space-y-3">
+          <button
+            className="btn btn-full !rounded-full text-white !py-4 !text-base !font-bold"
+            style={{ backgroundColor: color }}
+            onClick={() => { resetAll(); navigate("/myclaims"); }}
+          >
+            내 접수 확인하기
+          </button>
+          <button
+            className="btn btn-full !rounded-full !py-4 !text-base !font-bold border-border text-text-body"
+            onClick={() => { resetAll(); navigate("/"); }}
+          >
+            홈으로
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ════════════════════════════════════
   // Step 0: 사고 유형 선택
@@ -469,9 +788,9 @@ export default function ClaimPage() {
               className="btn btn-full !rounded-full text-white !py-4 !text-base !font-bold"
               style={{ backgroundColor: "#0061AF" }}
               disabled={!leakLocation || !leakCause || leakDamages.length === 0}
-              onClick={() => { setSubmitted(true); }}
+              onClick={() => { setStep(2); setLeakAiReady(false); scrollTop(); }}
             >
-              접수하기
+              AI 피해 산정
             </button>
           </>
         )}
@@ -536,11 +855,25 @@ export default function ClaimPage() {
               <p className="text-xs text-text-muted mt-1">진단서는 필수, 의료비 영수증은 선택입니다</p>
             </div>
 
+            <div className="card border border-[#C9252C20] bg-[#C9252C08] p-4 mb-5 rounded-[var(--radius-card)]">
+              <div className="flex gap-2.5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9252C" strokeWidth="2" className="shrink-0 mt-0.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <p className="text-xs text-text-muted leading-relaxed">
+                  대인 보상은 진단서·의료비 기반으로 산정되며, AI 즉시 계산이 불가합니다.
+                  접수 후 <strong className="text-text-body">손해사정사가 검토</strong>합니다.
+                </p>
+              </div>
+            </div>
+
             <button
               className="btn btn-full !rounded-full text-white !py-4 !text-base !font-bold"
               style={{ backgroundColor: "#C9252C" }}
               disabled={!injuryType || !injuryPlace || !victimName || !treatmentStatus}
-              onClick={() => { setSubmitted(true); }}
+              onClick={() => { setSubmitted(true); scrollTop(); }}
             >
               접수하기
             </button>
@@ -606,11 +939,25 @@ export default function ClaimPage() {
               <p className="text-xs text-text-muted mt-1">소방서 발급 화재증명원이 있으면 첨부해주세요</p>
             </div>
 
+            <div className="card border border-[#F4792020] bg-[#F4792008] p-4 mb-5 rounded-[var(--radius-card)]">
+              <div className="flex gap-2.5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F47920" strokeWidth="2" className="shrink-0 mt-0.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <p className="text-xs text-text-muted leading-relaxed">
+                  화재·폭발은 화재증명원 + 현장 감정이 필수이며, AI 즉시 계산이 불가합니다.
+                  접수 후 <strong className="text-text-body">현장 감정 후 산정</strong>됩니다.
+                </p>
+              </div>
+            </div>
+
             <button
               className="btn btn-full !rounded-full text-white !py-4 !text-base !font-bold"
               style={{ backgroundColor: "#F47920" }}
               disabled={!fireType || fireReported === null || !fireDamageScope}
-              onClick={() => { setSubmitted(true); }}
+              onClick={() => { setSubmitted(true); scrollTop(); }}
             >
               접수하기
             </button>
@@ -621,7 +968,7 @@ export default function ClaimPage() {
   }
 
   // ════════════════════════════════════
-  // Step 2: AI 분석 (시설하자만)
+  // Step 2: AI 분석 결과 (균열·파손)
   // ════════════════════════════════════
   if (step === 2 && claimType === "facility") {
     return (
@@ -629,16 +976,17 @@ export default function ClaimPage() {
         <BackHeader onBack={goBack} title="간편 보험 접수" />
         <StepIndicator total={3} current={2} />
 
-        <AIAnalysisStep
+        <FacilityAIResult
           defectType={defectType!}
-          onComplete={() => setAiAnalysisDone(true)}
+          defectLocation={defectLocation!}
+          onReady={() => setAiAnalysisDone(true)}
         />
 
         {aiAnalysisDone && (
           <button
             className="btn btn-full !rounded-full text-white mt-5 !py-4 !text-base !font-bold"
             style={{ backgroundColor: "#00854A" }}
-            onClick={() => setSubmitted(true)}
+            onClick={() => { setSubmitted(true); scrollTop(); }}
           >
             접수하기
           </button>
@@ -648,37 +996,26 @@ export default function ClaimPage() {
   }
 
   // ════════════════════════════════════
-  // 접수 완료 모달 (공용)
+  // Step 2: AI 피해 산정 결과 (누수)
   // ════════════════════════════════════
-  return (
-    <div className="animate-[fadeIn_0.25s_ease] px-[var(--space-page)] pt-[var(--space-page)] pb-24">
-      <Modal open={submitted} center>
-        <Modal.Header className="!pt-8 text-center">
-          <div
-            className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center"
-            style={{ backgroundColor: currentType?.color ?? "#00854A" }}
-          >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <h3 className="text-xl font-bold text-text-heading mb-2">접수가 완료되었습니다</h3>
-        </Modal.Header>
-        <Modal.Body className="text-center">
-          <p className="text-sm text-text-muted leading-relaxed mb-3">
-            접수번호 <span className="font-semibold text-text-body">#{claimNumber}</span>
-          </p>
-          <div
-            className="inline-block px-4 py-2 rounded-full text-sm font-medium"
-            style={{ backgroundColor: `${currentType?.color ?? "#00854A"}12`, color: currentType?.color ?? "#00854A" }}
-          >
-            {currentType?.completionMsg}
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <button className="btn btn-primary btn-full !rounded-full !py-4 !text-base !font-bold" onClick={handleSubmitConfirm}>확인</button>
-        </Modal.Footer>
-      </Modal>
-    </div>
-  );
+  if (step === 2 && claimType === "leak") {
+    return (
+      <div className="animate-[fadeIn_0.25s_ease] px-[var(--space-page)] pt-[var(--space-page)] pb-24">
+        <BackHeader onBack={goBack} title="간편 보험 접수" />
+        <StepIndicator total={3} current={2} />
+
+        <LeakAIResult leakDamages={leakDamages} />
+
+        <button
+          className="btn btn-full !rounded-full text-white mt-5 !py-4 !text-base !font-bold"
+          style={{ backgroundColor: "#0061AF" }}
+          onClick={() => { setSubmitted(true); scrollTop(); }}
+        >
+          접수하기
+        </button>
+      </div>
+    );
+  }
+
+  return null;
 }
