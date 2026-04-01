@@ -78,7 +78,7 @@ export default function ClaimPage() {
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-          <h2 className="text-xl font-bold text-text-heading">사고접수</h2>
+          <h2 className="text-xl font-bold text-text-heading">간편 보험 접수</h2>
         </div>
         <StepIndicator total={3} current={0} />
         <h2 className="text-[22px] font-bold text-text-heading mb-2 tracking-[-0.02em]">어떤 피해를 입으셨나요?</h2>
@@ -125,7 +125,7 @@ export default function ClaimPage() {
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-          <h2 className="text-xl font-bold text-text-heading">사고접수</h2>
+          <h2 className="text-xl font-bold text-text-heading">간편 보험 접수</h2>
         </div>
         <StepIndicator total={3} current={1} />
         <h2 className="text-[22px] font-bold text-text-heading mb-2 tracking-[-0.02em]">피해 상황을 알려주세요</h2>
@@ -214,7 +214,7 @@ export default function ClaimPage() {
   return (
     <div className="animate-[fadeIn_0.25s_ease] px-[var(--space-page)] pt-[var(--space-page)] pb-24">
       <div className="flex items-center gap-3 mb-6">
-        <h2 className="text-xl font-bold text-text-heading">사고접수</h2>
+        <h2 className="text-xl font-bold text-text-heading">간편 보험 접수</h2>
       </div>
       <StepIndicator total={3} current={2} />
 

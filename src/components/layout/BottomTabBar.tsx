@@ -4,7 +4,7 @@ import { Home, FilePlus, History, MoreHorizontal } from 'lucide-react';
 
 const TABS = [
   { path: '/', label: '홈', icon: <Home /> },
-  { path: '/claim', label: '사고접수', icon: <FilePlus /> },
+  { path: '/claim', label: '보험접수', icon: <FilePlus /> },
   { path: '/myclaims', label: '내 접수', icon: <History /> },
   { path: '/more', label: '더보기', icon: <MoreHorizontal /> },
 ];

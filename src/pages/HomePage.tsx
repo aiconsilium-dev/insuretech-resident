@@ -24,17 +24,17 @@ export default function HomePage() {
       <div className="px-[var(--space-page)] pt-5">
         {/* CTA Card — DB Green 배경 */}
         <div
-          className="rounded-[var(--radius-card)] p-7 text-white cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)] mb-3.5"
-          style={{ background: "linear-gradient(135deg, #171717 0%, #0a0a0a 100%)" }}
+          className="rounded-[var(--radius-card)] p-7 text-white cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg mb-3.5"
+          style={{ background: "linear-gradient(135deg, #F47920 0%, #C9252C 100%)" }}
           onClick={() => navigate("/claim")}
         >
           <div className="flex items-center gap-3 mb-2.5">
-            <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center">
-              <span className="text-base">◆</span>
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+              <span className="text-lg">◆</span>
             </div>
-            <h3 className="text-xl font-bold">긴급 사고접수</h3>
+            <h3 className="text-xl font-bold">간편 보험 접수</h3>
           </div>
-          <p className="text-sm opacity-80">피해가 발생했나요? AI가 즉시 분석해드립니다</p>
+          <p className="text-sm opacity-85">피해가 발생했나요? AI가 즉시 분석해드립니다</p>
         </div>
 
         {/* Status Card */}
@@ -53,34 +53,34 @@ export default function HomePage() {
 
         {/* Quick Menu */}
         <div className="section-title mt-6">빠른 메뉴</div>
-        <div className="grid grid-cols-2 gap-2.5 mb-3.5">
+        <div className="grid grid-cols-4 gap-2.5 mb-3.5">
+          <QuickMenuItem
+            symbol="◆"
+            label="보험접수"
+            onClick={() => navigate("/claim")}
+            iconBg="rgba(201,37,44,0.1)"
+            iconColor="#C9252C"
+          />
           <QuickMenuItem
             symbol="■"
-            label="사고접수"
-            onClick={() => navigate("/claim")}
+            label="내 접수"
+            onClick={() => navigate("/myclaims")}
             iconBg="rgba(0,133,74,0.1)"
             iconColor="#00854A"
           />
           <QuickMenuItem
             symbol="●"
-            label="내 접수"
-            onClick={() => navigate("/myclaims")}
-            iconBg="rgba(0,97,175,0.1)"
-            iconColor="#0061AF"
-          />
-          <QuickMenuItem
-            symbol="◆"
             label="보험안내"
             onClick={() => navigate("/insurance-info")}
-            iconBg="rgba(0,133,74,0.1)"
-            iconColor="#00854A"
+            iconBg="rgba(0,97,175,0.1)"
+            iconColor="#0061AF"
           />
           <QuickMenuItem
             symbol="─"
             label="서류관리"
             onClick={() => navigate("/documents")}
-            iconBg="rgba(0,97,175,0.1)"
-            iconColor="#0061AF"
+            iconBg="rgba(0,133,74,0.1)"
+            iconColor="#00854A"
           />
         </div>
 
@@ -115,14 +115,14 @@ function QuickMenuItem({
   iconColor: string;
 }) {
   return (
-    <Card variant="outlined" className="text-center !py-5 !px-3" onClick={onClick}>
+    <div className="text-center cursor-pointer" onClick={onClick}>
       <div
-        className="w-11 h-11 rounded-[12px] flex items-center justify-center text-lg mx-auto mb-2"
+        className="w-12 h-12 rounded-[14px] flex items-center justify-center text-lg mx-auto mb-2 transition-transform hover:scale-105"
         style={{ background: iconBg, color: iconColor }}
       >
         {symbol}
       </div>
-      <span className="block text-sm font-semibold text-text-body">{label}</span>
-    </Card>
+      <span className="block text-xs font-medium text-text-muted">{label}</span>
+    </div>
   );
 }
