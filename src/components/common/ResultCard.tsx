@@ -21,14 +21,14 @@ function TypeBadge({ type, highlighted }: { type: ResultType; highlighted: boole
   const badges: Record<ResultType, { cls: string; label: string; desc: string }> = {
     A: { cls: "badge-black", label: "TYPE A", desc: "시공사 하자\n하자보수 청구 대상" },
     B: { cls: "badge-gray", label: "TYPE B", desc: "면책 검토 대상" },
-    C: { cls: "bg-accent text-white", label: "TYPE C", desc: "보험금 산출\nAI 적산 완료" },
+    C: { cls: "bg-[#00854A] text-white", label: "TYPE C", desc: "보험금 산출\nAI 적산 완료" },
   };
   const b = badges[type];
 
   return (
     <div className={clsx(
       "flex-1 py-3.5 px-2.5 rounded-xl text-center border",
-      highlighted ? "border-primary bg-primary-light" : "border-border bg-bg-secondary"
+      highlighted ? "border-[#00854A] bg-[rgba(0,133,74,0.05)]" : "border-border bg-bg-secondary"
     )}>
       <span className={clsx("inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold mb-1.5", b.cls)}>{b.label}</span>
       <div className={clsx("text-[11px] leading-snug mt-1 whitespace-pre-line", highlighted ? "text-text-body" : "text-text-muted")}>{b.desc}</div>

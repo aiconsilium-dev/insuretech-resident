@@ -10,19 +10,29 @@
   --color-primary-hover: #0a0a0a;
   --color-primary-light: rgba(23, 23, 23, 0.06);
 
-  --color-accent: #3b82f6;
-  --color-accent-hover: #2563eb;
-  --color-accent-light: rgba(59, 130, 246, 0.08);
-  --color-accent-ring: rgba(59, 130, 246, 0.15);
+  --color-accent: #00854A;            /* DB Green — 메인 포인트 */
+  --color-accent-hover: #006b3c;
+  --color-accent-light: rgba(0, 133, 74, 0.08);
+  --color-accent-ring: rgba(0, 133, 74, 0.15);
 
-  --color-success: #10b981;
-  --color-success-light: rgba(16, 185, 129, 0.08);
+  /* DB Blue (정보) */
+  --color-info: #0061AF;
+  --color-info-light: rgba(20, 177, 231, 0.08);
+
+  --color-success: #009559;           /* DB Green (성공) */
+  --color-success-light: rgba(0, 149, 89, 0.08);
 
   --color-warning: #f59e0b;
   --color-warning-light: rgba(245, 158, 11, 0.08);
 
-  --color-danger: #ef4444;
-  --color-danger-light: rgba(239, 68, 68, 0.08);
+  --color-danger: #C9252C;            /* DB Red (에러/위험) */
+  --color-danger-light: rgba(201, 37, 44, 0.08);
+  --color-danger-border: rgba(201, 37, 44, 0.2);
+
+  /* DB 그라디언트 */
+  --gradient-db-blue: linear-gradient(135deg, #14B1E7 0%, #0061AF 100%);
+  --gradient-db-green: linear-gradient(135deg, #8DC63F 0%, #009559 100%);
+  --gradient-db-red: linear-gradient(135deg, #F47920 0%, #C9252C 100%);
 
   --color-bg: #ffffff;
   --color-bg-secondary: #f5f5f5;
@@ -135,12 +145,12 @@
   .btn-primary:active { transform: scale(0.98); }
 
   .btn-accent {
-    background: var(--color-accent);
+    background: #00854A;
     color: #ffffff;
     padding: 14px 24px;
     font-size: var(--font-size-base);
   }
-  .btn-accent:hover { background: var(--color-accent-hover); }
+  .btn-accent:hover { background: #006b3c; }
 
   .btn-secondary {
     background: var(--color-bg-secondary);
@@ -182,10 +192,11 @@
     padding: 4px 10px;
     border-radius: var(--radius-pill);
   }
-  .badge-primary { background: var(--color-accent-light); color: var(--color-accent); }
-  .badge-success { background: var(--color-success-light); color: #059669; }
+  .badge-primary { background: rgba(0, 133, 74, 0.08); color: #00854A; }
+  .badge-success { background: rgba(0, 149, 89, 0.08); color: #009559; }
   .badge-warning { background: var(--color-warning-light); color: #d97706; }
-  .badge-danger { background: var(--color-danger-light); color: #dc2626; }
+  .badge-danger { background: rgba(201, 37, 44, 0.08); color: #C9252C; }
+  .badge-info { background: rgba(20, 177, 231, 0.08); color: #0061AF; }
   .badge-gray { background: var(--color-bg-secondary); color: var(--color-text-muted); }
   .badge-black { background: var(--color-primary); color: #ffffff; }
 
@@ -246,9 +257,9 @@
     z-index: 1;
     transition: all 0.3s;
   }
-  .status-step.done .status-step-dot { background: var(--color-primary); }
+  .status-step.done .status-step-dot { background: #00854A; }
   .status-step.done { color: var(--color-text-body); }
-  .status-step.current .status-step-dot { background: var(--color-primary); box-shadow: 0 0 0 3px rgba(23, 23, 23, 0.12); }
+  .status-step.current .status-step-dot { background: #00854A; box-shadow: 0 0 0 3px rgba(0, 133, 74, 0.15); }
   .status-step.current { color: var(--color-text-heading); font-weight: 700; }
 
   /* ── Tab Bar ── */
@@ -281,7 +292,7 @@
     border: none;
     font-family: inherit;
   }
-  .tab-item.active { color: var(--color-text-heading); font-weight: 700; }
+  .tab-item.active { color: #00854A; font-weight: 700; }
   .tab-item svg { width: 22px; height: 22px; }
 
   /* ── Modal ── */
@@ -364,7 +375,7 @@
     border-right: none;
     font-family: inherit;
   }
-  .sub-tab.active { color: var(--color-text-heading); border-bottom-color: var(--color-primary); font-weight: 700; }
+  .sub-tab.active { color: #171717; border-bottom-color: #00854A; font-weight: 700; }
 }
 
 @keyframes spin {

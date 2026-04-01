@@ -91,13 +91,13 @@ export default function ClaimPage() {
               className={clsx(
                 "card border py-4.5 px-5 cursor-pointer transition-all flex items-start gap-3.5",
                 damageType === opt.type
-                  ? "border-primary bg-primary-light"
+                  ? "border-[#00854A] bg-[rgba(0,133,74,0.05)]"
                   : "border-border hover:border-text-dim"
               )}
             >
               <div className={clsx(
                 "w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 text-base",
-                damageType === opt.type ? "bg-primary text-white" : "bg-bg-secondary text-text-muted"
+                damageType === opt.type ? "bg-[#00854A] text-white" : "bg-bg-secondary text-text-muted"
               )}>
                 {opt.symbol}
               </div>
@@ -227,7 +227,7 @@ export default function ClaimPage() {
       {/* Submit Modal */}
       <Modal open={submitted} center>
         <Modal.Header className="!pt-8 text-center">
-          <div className="w-12 h-12 rounded-full bg-primary mx-auto mb-4 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-[#00854A] mx-auto mb-4 flex items-center justify-center">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
               <polyline points="20 6 9 17 4 12" />
             </svg>

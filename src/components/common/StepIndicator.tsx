@@ -13,7 +13,7 @@ export default function StepIndicator({ total, current }: Props) {
           key={i}
           className={clsx(
             "h-2 rounded-full transition-all",
-            i === current ? "w-6 bg-primary" : "w-2 bg-border"
+            i === current ? "w-6 bg-[#00854A]" : "w-2 bg-border"
           )}
         />
       ))}
