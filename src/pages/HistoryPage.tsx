@@ -52,7 +52,7 @@ const CLAIMS: Claim[] = [
     location: "거실·방",
     detail: "벽면 구조 균열 (폭 0.5mm 이상)",
     inspection: null,
-    nextAction: "하자적출업체 배정 대기",
+    nextAction: "분류 완료 — 추가 확인 진행 중",
     isDefectCase: true,
   },
   {
@@ -285,7 +285,7 @@ export default function HistoryPage() {
                   {claim.typeClass === "A" && (
                     <div className="mt-3 p-3 rounded-lg border border-[#C9252C33] bg-[#C9252C08]">
                       <p className="text-[12px] text-[#C9252C] leading-relaxed">
-                        ⚠ 본 건은 시공상 하자로 분류되었습니다. 현재 이 단지는 하자소송이 진행 중이며, 해당 하자는 소송에 포함될 수 있습니다.
+                        ⚠ 본 건은 시공상 하자 가능성이 있습니다. 현재 단지에서 하자소송이 진행 중이며, 추가 확인이 필요합니다.
                       </p>
                       {claim.nextAction && (
                         <p className="text-[12px] text-text-muted mt-1.5">{claim.nextAction}</p>
@@ -310,7 +310,7 @@ export default function HistoryPage() {
                     {/* TYPE A: 현장조사 + 변호사 의견서 */}
                     {claim.typeClass === "A" && (
                       <>
-                        <ActionBtn label="현장조사 요청" color="#0061AF" />
+                        <ActionBtn label="추가 질의" color="#0061AF" />
                         <ActionBtn label="변호사 의견서 요청" color="#00854A" />
                       </>
                     )}
@@ -323,7 +323,7 @@ export default function HistoryPage() {
                     )}
                     {/* TYPE C: 산정 전 단계에서만 현장조사 요청 */}
                     {claim.typeClass === "C" && claim.statusStep < 3 && (
-                      <ActionBtn label="현장조사 요청" color="#0061AF" />
+                      <ActionBtn label="관리소 방문 요청" color="#0061AF" />
                     )}
                   </div>
                 </div>

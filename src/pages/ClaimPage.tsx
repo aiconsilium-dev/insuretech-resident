@@ -714,7 +714,14 @@ export default function ClaimPage() {
                 <PhotoCapture label="근접" onCapture={(url) => setFacilityPhotos(p => { const n = [...p]; n[1] = url; return n; })} />
                 <PhotoCapture label="주변" onCapture={(url) => setFacilityPhotos(p => { const n = [...p]; n[2] = url; return n; })} />
               </div>
-              <p className="text-xs text-text-muted mt-1">전경, 근접, 주변 사진을 각각 첨부해주세요</p>
+              <p className="text-xs text-text-muted mt-1">사진 촬영이 어려우면 관리소에 방문 요청할 수 있습니다</p>
+              <button
+                type="button"
+                className="mt-2 px-4 py-2 rounded-full border border-[#0061AF] text-[#0061AF] text-[13px] font-medium hover:bg-[rgba(0,97,175,0.05)] transition-colors"
+                onClick={() => alert("관리사무소에 방문 요청이 접수되었습니다.")}
+              >
+                관리소 방문 요청
+              </button>
             </div>
 
             <div className="mb-5">

@@ -57,7 +57,7 @@ export default function HomePage() {
           <QuickMenuItem symbol="◆" label="보험접수" onClick={() => navigate("/claim")} color="#C9252C" />
           <QuickMenuItem symbol="■" label="접수현황" onClick={() => navigate("/myclaims")} color="#00854A" />
           <QuickMenuItem symbol="●" label="보험안내" onClick={() => navigate("/insurance-info")} color="#0061AF" />
-          <QuickMenuItem symbol="─" label="서류관리" onClick={() => navigate("/documents")} color="#00854A" />
+          <QuickMenuItem symbol="─" label="관리소 요청" onClick={() => navigate("/more")} color="#00854A" />
         </div>
 
         {/* 우리 단지 정보 */}
