@@ -25,21 +25,34 @@ export default function PhotoCapture({ label, onCapture }: Props) {
   return (
     <div
       className={clsx(
-        "photo-slot !flex-1 !aspect-square !rounded-xl",
-        preview && "filled"
+        "relative w-[80px] h-[80px] shrink-0 rounded-xl border-[1.5px] border-dashed border-border",
+        "flex flex-col items-center justify-center gap-1 cursor-pointer transition-all",
+        "bg-bg-secondary text-text-dim text-[10px] font-medium overflow-hidden",
+        "hover:border-text-muted hover:text-text-muted",
+        preview && "border-solid border-border"
       )}
       onClick={() => inputRef.current?.click()}
     >
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleChange} />
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleChange}
+      />
       {preview ? (
-        <img src={preview} alt={label} className="absolute inset-0 w-full h-full object-cover rounded-xl" />
+        <img
+          src={preview}
+          alt={label}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
       ) : (
         <>
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
             <circle cx="12" cy="13" r="4" />
           </svg>
-          <span className="text-center px-1">{label}</span>
+          <span className="text-center leading-tight px-1">{label}</span>
         </>
       )}
     </div>

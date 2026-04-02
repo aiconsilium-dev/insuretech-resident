@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useCreateClaim, useRunEstimate } from '@/hooks/useCreateClaim';
 import type { ApiEstimation } from '@/lib/api/types';
 import StepIndicator from '@/components/common/StepIndicator';
-import PhotoCapture from '@/components/common/PhotoCapture';
+import PhotoCaptureGroup from '@/components/common/PhotoCaptureGroup';
 import clsx from 'clsx';
 import { useNavigate } from 'react-router-dom';
 
@@ -587,6 +587,427 @@ function LeakAIResult({ leakDamages }: { leakDamages: string[] }) {
 }
 
 /* ═══════════════════════════════════════
+   Step 1 폼 컴포넌트 (유형별 독립 상태)
+   뒤로가기 후 재진입 시 상태 초기화를 위해
+   각 폼이 자체 state를 관리합니다.
+   ═══════════════════════════════════════ */
+
+interface FacilityFormProps {
+  isCreating: boolean;
+  onSubmit: (locationDetail: string, description: string, defectType: string, defectLocation: string) => void;
+}
+function FacilityForm({ isCreating, onSubmit }: FacilityFormProps) {
+  const [defectType, setDefectType] = useState<string | null>(null);
+  const [defectLocation, setDefectLocation] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [desc, setDesc] = useState('');
+  return (
+    <>
+      <h2 className='text-[22px] font-bold text-text-heading mb-2 tracking-[-0.02em]'>
+        어떤 파손이 발생했나요?
+      </h2>
+      <p className='text-sm text-text-muted mb-6'>파손 유형을 선택하고 사진을 찍어주세요</p>
+
+      <div className='mb-5'>
+        <SectionLabel>파손 유형</SectionLabel>
+        <SelectGrid
+          items={DEFECT_TYPES.map((d) => ({ id: d.id, label: d.label, desc: d.desc }))}
+          selected={defectType}
+          onSelect={setDefectType}
+          color='#00854A'
+        />
+      </div>
+
+      <div className='mb-5'>
+        <SectionLabel>어디에서 발생했나요?</SectionLabel>
+        <OptionButtons
+          options={['거실·방', '주방·욕실', '베란다·발코니', '현관']}
+          selected={defectLocation}
+          onSelect={setDefectLocation}
+          color='#00854A'
+        />
+      </div>
+
+      <div className='mb-5'>
+        <SectionLabel>서류 첨부</SectionLabel>
+        <PhotoCaptureGroup
+          label='피해 사진'
+          hint='최대 3장 · 촬영이 어려우면 관리소에 방문 요청하세요'
+          photos={photos}
+          onUpdate={setPhotos}
+          maxCount={3}
+        />
+        <button
+          type='button'
+          className='mt-2 px-4 py-2 rounded-full border border-[#0061AF] text-[#0061AF] text-[13px] font-medium hover:bg-[rgba(0,97,175,0.05)] transition-colors'
+          onClick={() => alert('관리사무소에 방문 요청이 접수되었습니다.')}
+        >
+          관리소 방문 요청
+        </button>
+      </div>
+
+      <div className='mb-5'>
+        <SectionLabel>상세 설명</SectionLabel>
+        <textarea
+          className='input !min-h-[100px] !resize-y'
+          placeholder='하자 상황을 상세히 설명해주세요 (발생 위치, 범위, 시기 등)'
+          value={desc}
+          onChange={(e) => setDesc(e.target.value)}
+        />
+      </div>
+
+      <button
+        className='btn btn-full !rounded-full text-white !py-4 !text-base !font-bold'
+        style={{ backgroundColor: '#00854A' }}
+        disabled={!defectType || !defectLocation || isCreating}
+        onClick={() => onSubmit(defectLocation!, desc || defectLocation!, defectType!, defectLocation!)}
+      >
+        {isCreating ? '처리 중...' : 'AI 분석 시작'}
+      </button>
+    </>
+  );
+}
+
+interface LeakFormProps {
+  isCreating: boolean;
+  onSubmit: (locationDetail: string, description: string, leakDamages: string[]) => void;
+}
+function LeakForm({ isCreating, onSubmit }: LeakFormProps) {
+  const [leakLocation, setLeakLocation] = useState<string | null>(null);
+  const [leakCause, setLeakCause] = useState<string | null>(null);
+  const [leakDamages, setLeakDamages] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [leakAmount, setLeakAmount] = useState('');
+  return (
+    <>
+      <h2 className='text-[22px] font-bold text-text-heading mb-2 tracking-[-0.02em]'>
+        누수피해 상세
+      </h2>
+      <p className='text-sm text-text-muted mb-6'>누수 위치와 피해 범위를 입력해주세요</p>
+
+      <div className='mb-5'>
+        <SectionLabel>누수 발생 위치</SectionLabel>
+        <OptionButtons
+          options={LEAK_LOCATIONS}
+          selected={leakLocation}
+          onSelect={setLeakLocation}
+          color='#0061AF'
+        />
+      </div>
+
+      <div className='mb-5'>
+        <SectionLabel>추정 원인</SectionLabel>
+        <OptionButtons
+          options={LEAK_CAUSES}
+          selected={leakCause}
+          onSelect={setLeakCause}
+          color='#0061AF'
+        />
+      </div>
+
+      <div className='mb-5'>
+        <SectionLabel>피해 범위 (복수 선택)</SectionLabel>
+        <CheckList
+          options={LEAK_DAMAGES}
+          selected={leakDamages}
+          onToggle={(val) =>
+            setLeakDamages((prev) =>
+              prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val]
+            )
+          }
+          color='#0061AF'
+        />
+      </div>
+
+      <div className='mb-5'>
+        <SectionLabel>서류 첨부</SectionLabel>
+        <PhotoCaptureGroup
+          label='피해 사진'
+          hint='최대 3장'
+          photos={photos}
+          onUpdate={setPhotos}
+          maxCount={3}
+        />
+      </div>
+
+      <div className='mb-5'>
+        <SectionLabel>피해 금액 (선택)</SectionLabel>
+        <input
+          className='input'
+          placeholder='수리 견적 금액을 입력해주세요 (원)'
+          value={leakAmount}
+          onChange={(e) => setLeakAmount(e.target.value)}
+        />
+        <p className='text-xs text-text-muted mt-1'>수리 견적서가 있으면 사진으로 첨부해주세요</p>
+      </div>
+
+      <button
+        className='btn btn-full !rounded-full text-white !py-4 !text-base !font-bold'
+        style={{ backgroundColor: '#0061AF' }}
+        disabled={!leakLocation || !leakCause || leakDamages.length === 0 || isCreating}
+        onClick={() =>
+          onSubmit(
+            leakLocation!,
+            `누수 원인: ${leakCause}, 피해: ${leakDamages.join(', ')}`,
+            leakDamages
+          )
+        }
+      >
+        {isCreating ? '처리 중...' : 'AI 피해 산정'}
+      </button>
+    </>
+  );
+}
+
+interface InjuryFormProps {
+  isCreating: boolean;
+  onSubmit: (locationDetail: string, description: string) => void;
+}
+function InjuryForm({ isCreating, onSubmit }: InjuryFormProps) {
+  const [injuryType, setInjuryType] = useState<string | null>(null);
+  const [injuryPlace, setInjuryPlace] = useState<string | null>(null);
+  const [victimName, setVictimName] = useState('');
+  const [victimPhone, setVictimPhone] = useState('');
+  const [isResident, setIsResident] = useState<boolean | null>(null);
+  const [treatmentStatus, setTreatmentStatus] = useState<string | null>(null);
+  const [diagnosisDocs, setDiagnosisDocs] = useState<string[]>([]);
+  const [receiptDocs, setReceiptDocs] = useState<string[]>([]);
+  return (
+    <>
+      <h2 className='text-[22px] font-bold text-text-heading mb-2 tracking-[-0.02em]'>
+        신체손해 상세
+      </h2>
+      <p className='text-sm text-text-muted mb-6'>사고 정보와 피해자 정보를 입력해주세요</p>
+
+      <div className='mb-5'>
+        <SectionLabel>사고 유형</SectionLabel>
+        <OptionButtons
+          options={INJURY_TYPES}
+          selected={injuryType}
+          onSelect={setInjuryType}
+          color='#C9252C'
+        />
+      </div>
+
+      <div className='mb-5'>
+        <SectionLabel>사고 장소</SectionLabel>
+        <OptionButtons
+          options={INJURY_PLACES}
+          selected={injuryPlace}
+          onSelect={setInjuryPlace}
+          color='#C9252C'
+        />
+      </div>
+
+      <div className='mb-5'>
+        <SectionLabel>피해자 정보</SectionLabel>
+        <div className='space-y-2.5'>
+          <input
+            className='input'
+            placeholder='이름'
+            value={victimName}
+            onChange={(e) => setVictimName(e.target.value)}
+          />
+          <input
+            className='input'
+            placeholder='연락처'
+            value={victimPhone}
+            onChange={(e) => setVictimPhone(e.target.value)}
+          />
+          <div className='flex gap-2.5'>
+            <button
+              onClick={() => setIsResident(true)}
+              className={clsx(
+                'flex-1 py-2.5 rounded-full text-sm font-medium border transition-all',
+                isResident === true ? 'text-white' : 'border-border text-text-body'
+              )}
+              style={isResident === true ? { backgroundColor: '#C9252C', borderColor: '#C9252C' } : {}}
+            >
+              입주민
+            </button>
+            <button
+              onClick={() => setIsResident(false)}
+              className={clsx(
+                'flex-1 py-2.5 rounded-full text-sm font-medium border transition-all',
+                isResident === false ? 'text-white' : 'border-border text-text-body'
+              )}
+              style={isResident === false ? { backgroundColor: '#C9252C', borderColor: '#C9252C' } : {}}
+            >
+              외부인
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className='mb-5'>
+        <SectionLabel>치료 현황</SectionLabel>
+        <OptionButtons
+          options={TREATMENT_STATUS}
+          selected={treatmentStatus}
+          onSelect={setTreatmentStatus}
+          color='#C9252C'
+        />
+      </div>
+
+      <div className='mb-5'>
+        <SectionLabel>서류 첨부</SectionLabel>
+        <div className='space-y-3'>
+          <PhotoCaptureGroup
+            label='진단서'
+            hint='필수 · 최대 3개'
+            photos={diagnosisDocs}
+            onUpdate={setDiagnosisDocs}
+            maxCount={3}
+          />
+          <PhotoCaptureGroup
+            label='의료비 영수증'
+            hint='선택 · 최대 3개'
+            photos={receiptDocs}
+            onUpdate={setReceiptDocs}
+            maxCount={3}
+          />
+        </div>
+      </div>
+
+      <div className='card border border-[#C9252C20] bg-[#C9252C08] p-4 mb-5 rounded-[var(--radius-card)]'>
+        <div className='flex gap-2.5'>
+          <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='#C9252C' strokeWidth='2' className='shrink-0 mt-0.5'>
+            <circle cx='12' cy='12' r='10' />
+            <line x1='12' y1='8' x2='12' y2='12' />
+            <line x1='12' y1='16' x2='12.01' y2='16' />
+          </svg>
+          <p className='text-xs text-text-muted leading-relaxed'>
+            대인 보상은 진단서·의료비 기반으로 산정되며, AI 즉시 계산이 불가합니다. 접수 후{' '}
+            <strong className='text-text-body'>손해사정사가 검토</strong>합니다.
+          </p>
+        </div>
+      </div>
+
+      <button
+        className='btn btn-full !rounded-full text-white !py-4 !text-base !font-bold'
+        style={{ backgroundColor: '#C9252C' }}
+        disabled={!injuryType || !injuryPlace || !victimName || !treatmentStatus || isCreating}
+        onClick={() => onSubmit(injuryPlace!, `${injuryType} — ${victimName}, 치료: ${treatmentStatus}`)}
+      >
+        {isCreating ? '처리 중...' : '접수하기'}
+      </button>
+    </>
+  );
+}
+
+interface FireFormProps {
+  isCreating: boolean;
+  onSubmit: (locationDetail: string, description: string) => void;
+}
+function FireForm({ isCreating, onSubmit }: FireFormProps) {
+  const [fireType, setFireType] = useState<string | null>(null);
+  const [fireReported, setFireReported] = useState<boolean | null>(null);
+  const [fireDamageScope, setFireDamageScope] = useState<string | null>(null);
+  const [firePhotos, setFirePhotos] = useState<string[]>([]);
+  const [fireCertDocs, setFireCertDocs] = useState<string[]>([]);
+  return (
+    <>
+      <h2 className='text-[22px] font-bold text-text-heading mb-2 tracking-[-0.02em]'>
+        화재·폭발 상세
+      </h2>
+      <p className='text-sm text-text-muted mb-6'>사고 유형과 피해 범위를 입력해주세요</p>
+
+      <div className='mb-5'>
+        <SectionLabel>사고 유형</SectionLabel>
+        <OptionButtons
+          options={FIRE_TYPES}
+          selected={fireType}
+          onSelect={setFireType}
+          color='#F47920'
+        />
+      </div>
+
+      <div className='mb-5'>
+        <SectionLabel>소방서 신고 여부</SectionLabel>
+        <div className='flex gap-2.5'>
+          <button
+            onClick={() => setFireReported(true)}
+            className={clsx(
+              'flex-1 py-3 rounded-full text-sm font-semibold border transition-all',
+              fireReported === true ? 'text-white' : 'border-border text-text-body'
+            )}
+            style={fireReported === true ? { backgroundColor: '#F47920', borderColor: '#F47920' } : {}}
+          >
+            예
+          </button>
+          <button
+            onClick={() => setFireReported(false)}
+            className={clsx(
+              'flex-1 py-3 rounded-full text-sm font-semibold border transition-all',
+              fireReported === false ? 'text-white' : 'border-border text-text-body'
+            )}
+            style={fireReported === false ? { backgroundColor: '#F47920', borderColor: '#F47920' } : {}}
+          >
+            아니오
+          </button>
+        </div>
+      </div>
+
+      <div className='mb-5'>
+        <SectionLabel>피해 범위</SectionLabel>
+        <OptionButtons
+          options={FIRE_DAMAGE_SCOPE}
+          selected={fireDamageScope}
+          onSelect={setFireDamageScope}
+          color='#F47920'
+        />
+      </div>
+
+      <div className='mb-5'>
+        <SectionLabel>서류 첨부</SectionLabel>
+        <PhotoCaptureGroup
+          label='피해 사진'
+          hint='최대 3장'
+          photos={firePhotos}
+          onUpdate={setFirePhotos}
+          maxCount={3}
+        />
+        <PhotoCaptureGroup
+          label='화재증명원'
+          hint='소방서 발급 화재증명원이 있으면 첨부해주세요 · 최대 3개'
+          photos={fireCertDocs}
+          onUpdate={setFireCertDocs}
+          maxCount={3}
+        />
+      </div>
+
+      <div className='card border border-[#F4792020] bg-[#F4792008] p-4 mb-5 rounded-[var(--radius-card)]'>
+        <div className='flex gap-2.5'>
+          <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='#F47920' strokeWidth='2' className='shrink-0 mt-0.5'>
+            <circle cx='12' cy='12' r='10' />
+            <line x1='12' y1='8' x2='12' y2='12' />
+            <line x1='12' y1='16' x2='12.01' y2='16' />
+          </svg>
+          <p className='text-xs text-text-muted leading-relaxed'>
+            화재·폭발은 화재증명원 + 현장 감정이 필수이며, AI 즉시 계산이 불가합니다. 접수 후{' '}
+            <strong className='text-text-body'>현장 감정 후 산정</strong>됩니다.
+          </p>
+        </div>
+      </div>
+
+      <button
+        className='btn btn-full !rounded-full text-white !py-4 !text-base !font-bold'
+        style={{ backgroundColor: '#F47920' }}
+        disabled={!fireType || fireReported === null || !fireDamageScope || isCreating}
+        onClick={() =>
+          onSubmit(
+            fireDamageScope!,
+            `${fireType}, 신고: ${fireReported ? '예' : '아니오'}, 피해범위: ${fireDamageScope}`
+          )
+        }
+      >
+        {isCreating ? '처리 중...' : '접수하기'}
+      </button>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════
    메인 ClaimPage
    ═══════════════════════════════════════ */
 export default function ClaimPage() {
@@ -600,48 +1021,11 @@ export default function ClaimPage() {
   const [submitted, setSubmitted] = useState(false);
   const [createdClaimId, setCreatedClaimId] = useState<string | null>(null);
 
-  // ── 시설하자 (TYPE A) 상태 ──
-  const [defectType, setDefectType] = useState<string | null>(null);
-  const [defectLocation, setDefectLocation] = useState<string | null>(null);
-  const [facilityPhotos, setFacilityPhotos] = useState<(string | null)[]>([
-    null,
-    null,
-    null,
-  ]);
-  const [facilityDesc, setFacilityDesc] = useState('');
+  // AI 분석 및 완료 화면에 필요한 제출 데이터 (step 1 → step 2/completed 전달용)
   const [aiAnalysisDone, setAiAnalysisDone] = useState(false);
-
-  // ── 누수피해 (TYPE B) 상태 ──
-  const [leakLocation, setLeakLocation] = useState<string | null>(null);
-  const [leakCause, setLeakCause] = useState<string | null>(null);
-  const [leakDamages, setLeakDamages] = useState<string[]>([]);
-  const [leakPhotos, setLeakPhotos] = useState<(string | null)[]>([
-    null,
-    null,
-    null,
-  ]);
-  const [leakAmount, setLeakAmount] = useState('');
-  const [leakAiReady, setLeakAiReady] = useState(false);
-
-  // ── 신체손해 (TYPE C) 상태 ──
-  const [injuryType, setInjuryType] = useState<string | null>(null);
-  const [injuryPlace, setInjuryPlace] = useState<string | null>(null);
-  const [victimName, setVictimName] = useState('');
-  const [victimPhone, setVictimPhone] = useState('');
-  const [isResident, setIsResident] = useState<boolean | null>(null);
-  const [treatmentStatus, setTreatmentStatus] = useState<string | null>(null);
-  const [injuryDocs, setInjuryDocs] = useState<(string | null)[]>([null, null]);
-
-  // ── 화재·폭발 (TYPE D) 상태 ──
-  const [fireType, setFireType] = useState<string | null>(null);
-  const [fireReported, setFireReported] = useState<boolean | null>(null);
-  const [fireDamageScope, setFireDamageScope] = useState<string | null>(null);
-  const [firePhotos, setFirePhotos] = useState<(string | null)[]>([
-    null,
-    null,
-    null,
-  ]);
-  const [fireCertDoc, setFireCertDoc] = useState<(string | null)[]>([null]);
+  const [submittedDefectType, setSubmittedDefectType] = useState<string | null>(null);
+  const [submittedDefectLocation, setSubmittedDefectLocation] = useState<string | null>(null);
+  const [submittedLeakDamages, setSubmittedLeakDamages] = useState<string[]>([]);
 
   // 접수번호 생성
   const [claimNumber] = useState(() => `CLM-${String(Date.now()).slice(-6)}`);
@@ -649,14 +1033,14 @@ export default function ClaimPage() {
   // AI 계산 가능 여부
   const isAICalculable = claimType === 'facility' || claimType === 'leak';
 
-  // 예상 보험금 계산
+  // 예상 보험금 계산 (제출 완료 후 submitted* 값 기반)
   function getInsuranceAmount(): number | null {
-    if (claimType === 'facility' && defectType) {
-      return FACILITY_ESTIMATION[defectType]?.insurance ?? null;
+    if (claimType === 'facility' && submittedDefectType) {
+      return FACILITY_ESTIMATION[submittedDefectType]?.insurance ?? null;
     }
-    if (claimType === 'leak' && leakDamages.length > 0) {
+    if (claimType === 'leak' && submittedLeakDamages.length > 0) {
       let total = 0;
-      for (const dmg of leakDamages) {
+      for (const dmg of submittedLeakDamages) {
         total += LEAK_DAMAGE_COSTS[dmg]?.subtotal ?? 0;
       }
       return Math.max(0, total - 100000);
@@ -693,29 +1077,10 @@ export default function ClaimPage() {
     setStep(0);
     setSubmitted(false);
     setCreatedClaimId(null);
-    setDefectType(null);
-    setDefectLocation(null);
-    setFacilityPhotos([null, null, null]);
-    setFacilityDesc('');
     setAiAnalysisDone(false);
-    setLeakLocation(null);
-    setLeakCause(null);
-    setLeakDamages([]);
-    setLeakPhotos([null, null, null]);
-    setLeakAmount('');
-    setLeakAiReady(false);
-    setInjuryType(null);
-    setInjuryPlace(null);
-    setVictimName('');
-    setVictimPhone('');
-    setIsResident(null);
-    setTreatmentStatus(null);
-    setInjuryDocs([null, null]);
-    setFireType(null);
-    setFireReported(null);
-    setFireDamageScope(null);
-    setFirePhotos([null, null, null]);
-    setFireCertDoc([null]);
+    setSubmittedDefectType(null);
+    setSubmittedDefectLocation(null);
+    setSubmittedLeakDamages([]);
   }
 
   function goBack() {
@@ -943,565 +1308,42 @@ export default function ClaimPage() {
         <BackHeader onBack={goBack} title='간편 보험 접수' />
         <StepIndicator total={totalSteps} current={1} />
 
-        {/* ── TYPE A: 시설하자 ── */}
         {claimType === 'facility' && (
-          <>
-            <h2 className='text-[22px] font-bold text-text-heading mb-2 tracking-[-0.02em]'>
-              어떤 파손이 발생했나요?
-            </h2>
-            <p className='text-sm text-text-muted mb-6'>
-              파손 유형을 선택하고 사진을 찍어주세요
-            </p>
-
-            <div className='mb-5'>
-              <SectionLabel>파손 유형</SectionLabel>
-              <SelectGrid
-                items={DEFECT_TYPES.map((d) => ({
-                  id: d.id,
-                  label: d.label,
-                  desc: d.desc,
-                }))}
-                selected={defectType}
-                onSelect={setDefectType}
-                color='#00854A'
-              />
-            </div>
-
-            <div className='mb-5'>
-              <SectionLabel>어디에서 발생했나요?</SectionLabel>
-              <OptionButtons
-                options={['거실·방', '주방·욕실', '베란다·발코니', '현관']}
-                selected={defectLocation}
-                onSelect={setDefectLocation}
-                color='#00854A'
-              />
-            </div>
-
-            <div className='mb-5'>
-              <SectionLabel>피해 사진 (3장)</SectionLabel>
-              <div className='flex gap-2.5 mb-1'>
-                <PhotoCapture
-                  label='전경'
-                  onCapture={(url) =>
-                    setFacilityPhotos((p) => {
-                      const n = [...p];
-                      n[0] = url;
-                      return n;
-                    })
-                  }
-                />
-                <PhotoCapture
-                  label='근접'
-                  onCapture={(url) =>
-                    setFacilityPhotos((p) => {
-                      const n = [...p];
-                      n[1] = url;
-                      return n;
-                    })
-                  }
-                />
-                <PhotoCapture
-                  label='주변'
-                  onCapture={(url) =>
-                    setFacilityPhotos((p) => {
-                      const n = [...p];
-                      n[2] = url;
-                      return n;
-                    })
-                  }
-                />
-              </div>
-              <p className='text-xs text-text-muted mt-1'>
-                사진 촬영이 어려우면 관리소에 방문 요청할 수 있습니다
-              </p>
-              <button
-                type='button'
-                className='mt-2 px-4 py-2 rounded-full border border-[#0061AF] text-[#0061AF] text-[13px] font-medium hover:bg-[rgba(0,97,175,0.05)] transition-colors'
-                onClick={() =>
-                  alert('관리사무소에 방문 요청이 접수되었습니다.')
-                }
-              >
-                관리소 방문 요청
-              </button>
-            </div>
-
-            <div className='mb-5'>
-              <SectionLabel>상세 설명</SectionLabel>
-              <textarea
-                className='input !min-h-[100px] !resize-y'
-                placeholder='하자 상황을 상세히 설명해주세요 (발생 위치, 범위, 시기 등)'
-                value={facilityDesc}
-                onChange={(e) => setFacilityDesc(e.target.value)}
-              />
-            </div>
-
-            <button
-              className='btn btn-full !rounded-full text-white !py-4 !text-base !font-bold'
-              style={{ backgroundColor: '#00854A' }}
-              disabled={!defectType || !defectLocation || isCreating}
-              onClick={() => {
-                setAiAnalysisDone(false);
-                handleCreateAndSubmit(
-                  defectLocation!,
-                  facilityDesc || defectLocation!
-                );
-              }}
-            >
-              {isCreating ? '처리 중...' : 'AI 분석 시작'}
-            </button>
-          </>
+          <FacilityForm
+            isCreating={isCreating}
+            onSubmit={(loc, desc, dt, dl) => {
+              setSubmittedDefectType(dt);
+              setSubmittedDefectLocation(dl);
+              setAiAnalysisDone(false);
+              handleCreateAndSubmit(loc, desc);
+            }}
+          />
         )}
-
-        {/* ── TYPE B: 누수피해 ── */}
         {claimType === 'leak' && (
-          <>
-            <h2 className='text-[22px] font-bold text-text-heading mb-2 tracking-[-0.02em]'>
-              누수피해 상세
-            </h2>
-            <p className='text-sm text-text-muted mb-6'>
-              누수 위치와 피해 범위를 입력해주세요
-            </p>
-
-            <div className='mb-5'>
-              <SectionLabel>누수 발생 위치</SectionLabel>
-              <OptionButtons
-                options={LEAK_LOCATIONS}
-                selected={leakLocation}
-                onSelect={setLeakLocation}
-                color='#0061AF'
-              />
-            </div>
-
-            <div className='mb-5'>
-              <SectionLabel>추정 원인</SectionLabel>
-              <OptionButtons
-                options={LEAK_CAUSES}
-                selected={leakCause}
-                onSelect={setLeakCause}
-                color='#0061AF'
-              />
-            </div>
-
-            <div className='mb-5'>
-              <SectionLabel>피해 범위 (복수 선택)</SectionLabel>
-              <CheckList
-                options={LEAK_DAMAGES}
-                selected={leakDamages}
-                onToggle={(val) =>
-                  setLeakDamages((prev) =>
-                    prev.includes(val)
-                      ? prev.filter((v) => v !== val)
-                      : [...prev, val]
-                  )
-                }
-                color='#0061AF'
-              />
-            </div>
-
-            <div className='mb-5'>
-              <SectionLabel>피해 사진 (3장)</SectionLabel>
-              <div className='flex gap-2.5 mb-1'>
-                <PhotoCapture
-                  label='전경'
-                  onCapture={(url) =>
-                    setLeakPhotos((p) => {
-                      const n = [...p];
-                      n[0] = url;
-                      return n;
-                    })
-                  }
-                />
-                <PhotoCapture
-                  label='근접'
-                  onCapture={(url) =>
-                    setLeakPhotos((p) => {
-                      const n = [...p];
-                      n[1] = url;
-                      return n;
-                    })
-                  }
-                />
-                <PhotoCapture
-                  label='주변'
-                  onCapture={(url) =>
-                    setLeakPhotos((p) => {
-                      const n = [...p];
-                      n[2] = url;
-                      return n;
-                    })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className='mb-5'>
-              <SectionLabel>피해 금액 (선택)</SectionLabel>
-              <input
-                className='input'
-                placeholder='수리 견적 금액을 입력해주세요 (원)'
-                value={leakAmount}
-                onChange={(e) => setLeakAmount(e.target.value)}
-              />
-              <p className='text-xs text-text-muted mt-1'>
-                수리 견적서가 있으면 사진으로 첨부해주세요
-              </p>
-            </div>
-
-            <button
-              className='btn btn-full !rounded-full text-white !py-4 !text-base !font-bold'
-              style={{ backgroundColor: '#0061AF' }}
-              disabled={
-                !leakLocation ||
-                !leakCause ||
-                leakDamages.length === 0 ||
-                isCreating
-              }
-              onClick={() => {
-                setLeakAiReady(false);
-                handleCreateAndSubmit(
-                  leakLocation!,
-                  `누수 원인: ${leakCause}, 피해: ${leakDamages.join(', ')}`
-                );
-              }}
-            >
-              {isCreating ? '처리 중...' : 'AI 피해 산정'}
-            </button>
-          </>
+          <LeakForm
+            isCreating={isCreating}
+            onSubmit={(loc, desc, damages) => {
+              setSubmittedLeakDamages(damages);
+              handleCreateAndSubmit(loc, desc);
+            }}
+          />
         )}
-
-        {/* ── TYPE C: 신체손해 ── */}
         {claimType === 'injury' && (
-          <>
-            <h2 className='text-[22px] font-bold text-text-heading mb-2 tracking-[-0.02em]'>
-              신체손해 상세
-            </h2>
-            <p className='text-sm text-text-muted mb-6'>
-              사고 정보와 피해자 정보를 입력해주세요
-            </p>
-
-            <div className='mb-5'>
-              <SectionLabel>사고 유형</SectionLabel>
-              <OptionButtons
-                options={INJURY_TYPES}
-                selected={injuryType}
-                onSelect={setInjuryType}
-                color='#C9252C'
-              />
-            </div>
-
-            <div className='mb-5'>
-              <SectionLabel>사고 장소</SectionLabel>
-              <OptionButtons
-                options={INJURY_PLACES}
-                selected={injuryPlace}
-                onSelect={setInjuryPlace}
-                color='#C9252C'
-              />
-            </div>
-
-            <div className='mb-5'>
-              <SectionLabel>피해자 정보</SectionLabel>
-              <div className='space-y-2.5'>
-                <input
-                  className='input'
-                  placeholder='이름'
-                  value={victimName}
-                  onChange={(e) => setVictimName(e.target.value)}
-                />
-                <input
-                  className='input'
-                  placeholder='연락처'
-                  value={victimPhone}
-                  onChange={(e) => setVictimPhone(e.target.value)}
-                />
-                <div className='flex gap-2.5'>
-                  <button
-                    onClick={() => setIsResident(true)}
-                    className={clsx(
-                      'flex-1 py-2.5 rounded-full text-sm font-medium border transition-all',
-                      isResident === true
-                        ? 'text-white'
-                        : 'border-border text-text-body'
-                    )}
-                    style={
-                      isResident === true
-                        ? { backgroundColor: '#C9252C', borderColor: '#C9252C' }
-                        : {}
-                    }
-                  >
-                    입주민
-                  </button>
-                  <button
-                    onClick={() => setIsResident(false)}
-                    className={clsx(
-                      'flex-1 py-2.5 rounded-full text-sm font-medium border transition-all',
-                      isResident === false
-                        ? 'text-white'
-                        : 'border-border text-text-body'
-                    )}
-                    style={
-                      isResident === false
-                        ? { backgroundColor: '#C9252C', borderColor: '#C9252C' }
-                        : {}
-                    }
-                  >
-                    외부인
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className='mb-5'>
-              <SectionLabel>치료 현황</SectionLabel>
-              <OptionButtons
-                options={TREATMENT_STATUS}
-                selected={treatmentStatus}
-                onSelect={setTreatmentStatus}
-                color='#C9252C'
-              />
-            </div>
-
-            <div className='mb-5'>
-              <SectionLabel>서류 첨부</SectionLabel>
-              <div className='flex gap-2.5'>
-                <PhotoCapture
-                  label='진단서'
-                  onCapture={(url) =>
-                    setInjuryDocs((p) => {
-                      const n = [...p];
-                      n[0] = url;
-                      return n;
-                    })
-                  }
-                />
-                <PhotoCapture
-                  label='의료비 영수증'
-                  onCapture={(url) =>
-                    setInjuryDocs((p) => {
-                      const n = [...p];
-                      n[1] = url;
-                      return n;
-                    })
-                  }
-                />
-              </div>
-              <p className='text-xs text-text-muted mt-1'>
-                진단서는 필수, 의료비 영수증은 선택입니다
-              </p>
-            </div>
-
-            <div className='card border border-[#C9252C20] bg-[#C9252C08] p-4 mb-5 rounded-[var(--radius-card)]'>
-              <div className='flex gap-2.5'>
-                <svg
-                  width='18'
-                  height='18'
-                  viewBox='0 0 24 24'
-                  fill='none'
-                  stroke='#C9252C'
-                  strokeWidth='2'
-                  className='shrink-0 mt-0.5'
-                >
-                  <circle cx='12' cy='12' r='10' />
-                  <line x1='12' y1='8' x2='12' y2='12' />
-                  <line x1='12' y1='16' x2='12.01' y2='16' />
-                </svg>
-                <p className='text-xs text-text-muted leading-relaxed'>
-                  대인 보상은 진단서·의료비 기반으로 산정되며, AI 즉시 계산이
-                  불가합니다. 접수 후{' '}
-                  <strong className='text-text-body'>손해사정사가 검토</strong>
-                  합니다.
-                </p>
-              </div>
-            </div>
-
-            <button
-              className='btn btn-full !rounded-full text-white !py-4 !text-base !font-bold'
-              style={{ backgroundColor: '#C9252C' }}
-              disabled={
-                !injuryType ||
-                !injuryPlace ||
-                !victimName ||
-                !treatmentStatus ||
-                isCreating
-              }
-              onClick={() =>
-                handleCreateAndSubmit(
-                  injuryPlace!,
-                  `${injuryType} — ${victimName}, 치료: ${treatmentStatus}`
-                )
-              }
-            >
-              {isCreating ? '처리 중...' : '접수하기'}
-            </button>
-          </>
+          <InjuryForm
+            isCreating={isCreating}
+            onSubmit={(loc, desc) => handleCreateAndSubmit(loc, desc)}
+          />
         )}
-
-        {/* ── TYPE D: 화재·폭발 ── */}
         {claimType === 'fire' && (
-          <>
-            <h2 className='text-[22px] font-bold text-text-heading mb-2 tracking-[-0.02em]'>
-              화재·폭발 상세
-            </h2>
-            <p className='text-sm text-text-muted mb-6'>
-              사고 유형과 피해 범위를 입력해주세요
-            </p>
-
-            <div className='mb-5'>
-              <SectionLabel>사고 유형</SectionLabel>
-              <OptionButtons
-                options={FIRE_TYPES}
-                selected={fireType}
-                onSelect={setFireType}
-                color='#F47920'
-              />
-            </div>
-
-            <div className='mb-5'>
-              <SectionLabel>소방서 신고 여부</SectionLabel>
-              <div className='flex gap-2.5'>
-                <button
-                  onClick={() => setFireReported(true)}
-                  className={clsx(
-                    'flex-1 py-3 rounded-full text-sm font-semibold border transition-all',
-                    fireReported === true
-                      ? 'text-white'
-                      : 'border-border text-text-body'
-                  )}
-                  style={
-                    fireReported === true
-                      ? { backgroundColor: '#F47920', borderColor: '#F47920' }
-                      : {}
-                  }
-                >
-                  예
-                </button>
-                <button
-                  onClick={() => setFireReported(false)}
-                  className={clsx(
-                    'flex-1 py-3 rounded-full text-sm font-semibold border transition-all',
-                    fireReported === false
-                      ? 'text-white'
-                      : 'border-border text-text-body'
-                  )}
-                  style={
-                    fireReported === false
-                      ? { backgroundColor: '#F47920', borderColor: '#F47920' }
-                      : {}
-                  }
-                >
-                  아니오
-                </button>
-              </div>
-            </div>
-
-            <div className='mb-5'>
-              <SectionLabel>피해 범위</SectionLabel>
-              <OptionButtons
-                options={FIRE_DAMAGE_SCOPE}
-                selected={fireDamageScope}
-                onSelect={setFireDamageScope}
-                color='#F47920'
-              />
-            </div>
-
-            <div className='mb-5'>
-              <SectionLabel>피해 사진</SectionLabel>
-              <div className='flex gap-2.5 mb-1'>
-                <PhotoCapture
-                  label='전경'
-                  onCapture={(url) =>
-                    setFirePhotos((p) => {
-                      const n = [...p];
-                      n[0] = url;
-                      return n;
-                    })
-                  }
-                />
-                <PhotoCapture
-                  label='근접'
-                  onCapture={(url) =>
-                    setFirePhotos((p) => {
-                      const n = [...p];
-                      n[1] = url;
-                      return n;
-                    })
-                  }
-                />
-                <PhotoCapture
-                  label='주변'
-                  onCapture={(url) =>
-                    setFirePhotos((p) => {
-                      const n = [...p];
-                      n[2] = url;
-                      return n;
-                    })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className='mb-5'>
-              <SectionLabel>화재증명원 (선택)</SectionLabel>
-              <div className='flex gap-2.5'>
-                <PhotoCapture
-                  label='화재증명원'
-                  onCapture={(url) => setFireCertDoc([url])}
-                />
-              </div>
-              <p className='text-xs text-text-muted mt-1'>
-                소방서 발급 화재증명원이 있으면 첨부해주세요
-              </p>
-            </div>
-
-            <div className='card border border-[#F4792020] bg-[#F4792008] p-4 mb-5 rounded-[var(--radius-card)]'>
-              <div className='flex gap-2.5'>
-                <svg
-                  width='18'
-                  height='18'
-                  viewBox='0 0 24 24'
-                  fill='none'
-                  stroke='#F47920'
-                  strokeWidth='2'
-                  className='shrink-0 mt-0.5'
-                >
-                  <circle cx='12' cy='12' r='10' />
-                  <line x1='12' y1='8' x2='12' y2='12' />
-                  <line x1='12' y1='16' x2='12.01' y2='16' />
-                </svg>
-                <p className='text-xs text-text-muted leading-relaxed'>
-                  화재·폭발은 화재증명원 + 현장 감정이 필수이며, AI 즉시 계산이
-                  불가합니다. 접수 후{' '}
-                  <strong className='text-text-body'>현장 감정 후 산정</strong>
-                  됩니다.
-                </p>
-              </div>
-            </div>
-
-            <button
-              className='btn btn-full !rounded-full text-white !py-4 !text-base !font-bold'
-              style={{ backgroundColor: '#F47920' }}
-              disabled={
-                !fireType ||
-                fireReported === null ||
-                !fireDamageScope ||
-                isCreating
-              }
-              onClick={() =>
-                handleCreateAndSubmit(
-                  fireDamageScope!,
-                  `${fireType}, 신고: ${
-                    fireReported ? '예' : '아니오'
-                  }, 피해범위: ${fireDamageScope}`
-                )
-              }
-            >
-              {isCreating ? '처리 중...' : '접수하기'}
-            </button>
-          </>
+          <FireForm
+            isCreating={isCreating}
+            onSubmit={(loc, desc) => handleCreateAndSubmit(loc, desc)}
+          />
         )}
       </div>
     );
   }
+
 
   // ════════════════════════════════════
   // Step 2: AI 분석 결과 (균열·파손)
@@ -1513,8 +1355,8 @@ export default function ClaimPage() {
         <StepIndicator total={3} current={2} />
 
         <FacilityAIResult
-          defectType={defectType!}
-          defectLocation={defectLocation!}
+          defectType={submittedDefectType!}
+          defectLocation={submittedDefectLocation!}
           claimId={createdClaimId!}
           onReady={() => setAiAnalysisDone(true)}
         />
@@ -1544,7 +1386,7 @@ export default function ClaimPage() {
         <BackHeader onBack={goBack} title='간편 보험 접수' />
         <StepIndicator total={3} current={2} />
 
-        <LeakAIResult leakDamages={leakDamages} />
+        <LeakAIResult leakDamages={submittedLeakDamages} />
 
         <button
           className='btn btn-full !rounded-full text-white mt-5 !py-4 !text-base !font-bold'
