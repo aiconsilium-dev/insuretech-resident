@@ -27,9 +27,12 @@ export interface ClaimRecord {
 
 export interface UserInfo {
   name: string;
+  phone?: string;
   apt: string;
   dong: string;
   ho: string;
+  email?: string;
+  idCardPhoto?: string;
 }
 
 export const DAMAGE_LABELS: Record<DamageType, string> = {

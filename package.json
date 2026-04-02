@@ -3,17 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint ."
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.96.1",
     "clsx": "^2",
     "lucide-react": "^1.7.0",
+    "msw": "^2.12.14",
     "react": "^19",
     "react-dom": "^19",
-    "react-router-dom": "^7.13.2"
+    "react-router-dom": "^7.13.2",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
@@ -26,5 +29,11 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite": "^8.0.3"
+  },
+  "packageManager": "pnpm@10.15.0+sha512.486ebc259d3e999a4e8691ce03b5cac4a71cbeca39372a9b762cb500cfdf0873e2cb16abe3d951b1ee2cf012503f027b98b6584e4df22524e0c7450d9ec7aa7b",
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

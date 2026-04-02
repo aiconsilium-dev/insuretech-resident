@@ -1,134 +1,109 @@
-import { useState } from "react";
-import StatusSteps from "@/components/common/StatusSteps";
-import clsx from "clsx";
-import { ChevronDown } from "lucide-react";
+import { useState } from 'react';
+import StatusSteps from '@/components/common/StatusSteps';
+import clsx from 'clsx';
+import { ChevronDown } from 'lucide-react';
+import { useClaims } from '@/hooks/useClaims';
+import type {
+  ApiClaim,
+  ClaimCategory,
+  ClaimStatus,
+  TypeClass,
+} from '@/lib/api/types';
 
-/* ───────── 로컬 타입 ───────── */
-interface Claim {
-  id: string;
-  type: string;
-  typeIcon: string;
-  typeColor: string;
-  typeClass: "A" | "B" | "C";
-  date: string;
-  status: string;
-  statusStep: number; // 1‑4
-  amount: string | null;
-  location: string;
-  detail: string;
-  inspection: string | null;
-  nextAction: string | null;
-  isDefectCase?: boolean;
-  isDenied?: boolean;
+/* ───────── API 데이터 → 표시용 변환 ───────── */
+
+const CATEGORY_META: Record<
+  ClaimCategory,
+  { label: string; icon: string; color: string }
+> = {
+  leak: { label: '누수·침수', icon: '●', color: '#0061AF' },
+  facility: { label: '균열·파손', icon: '■', color: '#00854A' },
+  injury: { label: '다침·부상', icon: '◆', color: '#C9252C' },
+  fire: { label: '화재 피해', icon: '▲', color: '#C9252C' },
+};
+
+const STATUS_STEP: Record<ClaimStatus, number> = {
+  submitted: 1,
+  classifying: 1,
+  field_check_pending: 2,
+  field_checking: 2,
+  estimating: 3,
+  estimated: 3,
+  approval_pending: 3,
+  approved: 4,
+  paid: 4,
+  denied: 2,
+  appealed: 2,
+};
+
+function getStatusLabel(status: ClaimStatus): string {
+  const map: Record<ClaimStatus, string> = {
+    submitted: '접수완료',
+    classifying: '분류중',
+    field_check_pending: '현장조사 대기',
+    field_checking: '현장조사중',
+    estimating: '산정중',
+    estimated: '산정완료',
+    approval_pending: '승인대기',
+    approved: '승인완료',
+    paid: '지급완료',
+    denied: '면책통보',
+    appealed: '이의신청',
+  };
+  return map[status] ?? status;
 }
 
-/* ───────── 목업 데이터 ───────── */
-const CLAIMS: Claim[] = [
-  {
-    id: "#CLM-0328",
-    type: "누수·침수",
-    typeIcon: "●",
-    typeColor: "#0061AF",
-    typeClass: "C",
-    date: "2026.03.28",
-    status: "산정완료",
-    statusStep: 3,
-    amount: "624,000원",
-    location: "주방·욕실",
-    detail: "천장 누수로 인한 도배·장판 피해",
-    inspection: "완료 (03.29)",
-    nextAction: "보험금 지급 대기",
-  },
-  {
-    id: "#CLM-0315",
-    type: "균열·파손",
-    typeIcon: "■",
-    typeColor: "#00854A",
-    typeClass: "A",
-    date: "2026.03.15",
-    status: "하자조사중",
-    statusStep: 1,
-    amount: null,
-    location: "거실·방",
-    detail: "벽면 구조 균열 (폭 0.5mm 이상)",
-    inspection: null,
-    nextAction: "분류 완료 — 추가 확인 진행 중",
-    isDefectCase: true,
-  },
-  {
-    id: "#CLM-0310",
-    type: "균열·파손",
-    typeIcon: "■",
-    typeColor: "#00854A",
-    typeClass: "B",
-    date: "2026.03.10",
-    status: "면책통보",
-    statusStep: 2,
-    amount: null,
-    location: "베란다·발코니",
-    detail: "외벽 타일 균열 — 면책 사유: 자연 노화",
-    inspection: "완료 (03.12)",
-    nextAction: "이의신청 가능",
-    isDenied: true,
-  },
-  {
-    id: "#CLM-0301",
-    type: "다침·부상",
-    typeIcon: "◆",
-    typeColor: "#C9252C",
-    typeClass: "C",
-    date: "2026.03.01",
-    status: "심사중",
-    statusStep: 2,
-    amount: null,
-    location: "주차장",
-    detail: "주차장 미끄러짐 — 통원치료 중",
-    inspection: null,
-    nextAction: "손해사정사 심사 진행 중",
-  },
-  {
-    id: "#CLM-0220",
-    type: "누수·침수",
-    typeIcon: "●",
-    typeColor: "#0061AF",
-    typeClass: "C",
-    date: "2026.02.20",
-    status: "지급완료",
-    statusStep: 4,
-    amount: "1,820,000원",
-    location: "주방·욕실",
-    detail: "상층 배관 파열로 인한 피해",
-    inspection: "완료 (02.22)",
-    nextAction: null,
-  },
-];
+function formatAmount(amount?: number): string | null {
+  if (!amount) return null;
+  return `${amount.toLocaleString('ko-KR')}원`;
+}
 
-const STEPS = ["접수", "검토", "산정", "완료"];
+function formatDate(iso: string): string {
+  return iso.slice(0, 10).replace(/-/g, '.');
+}
 
-type Tab = "all" | "active" | "done";
+const STEPS = ['접수', '검토', '산정', '완료'];
+
+type Tab = 'all' | 'active' | 'done';
 
 /* ───────── 배지 스타일 ───────── */
-function typeBadge(tc: "A" | "B" | "C") {
+function typeBadge(tc: TypeClass) {
   const map = {
-    A: "border-[#C9252C] text-[#C9252C] bg-white",
-    B: "border-[#888] text-[#888] bg-white",
-    C: "border-[#00854A] text-[#00854A] bg-white",
+    A: 'border-[#C9252C] text-[#C9252C] bg-white',
+    B: 'border-[#888] text-[#888] bg-white',
+    C: 'border-[#00854A] text-[#00854A] bg-white',
   } as const;
-  const label = { A: "TYPE A", B: "TYPE B", C: "TYPE C" } as const;
+  const label = { A: 'TYPE A', B: 'TYPE B', C: 'TYPE C' } as const;
   return (
-    <span className={clsx("inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border", map[tc])}>
+    <span
+      className={clsx(
+        'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border',
+        map[tc]
+      )}
+    >
       {label[tc]}
     </span>
   );
 }
 
 /* ───────── 액션 버튼 ───────── */
-function ActionBtn({ label, color, onClick }: { label: string; color: string; onClick?: () => void }) {
+function ActionBtn({
+  label,
+  color,
+  onClick,
+}: {
+  label: string;
+  color: string;
+  onClick?: () => void;
+}) {
   return (
     <button
-      type="button"
-      onClick={(e) => { e.stopPropagation(); onClick?.(); }}
-      className="px-3 py-1.5 rounded-full text-[12px] font-semibold border bg-white active:scale-95 transition-transform"
+      type='button'
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick?.();
+      }}
+      className='px-3 py-1.5 rounded-full text-[12px] font-semibold border bg-white active:scale-95 transition-transform'
       style={{ borderColor: color, color }}
     >
       {label}
@@ -137,39 +112,54 @@ function ActionBtn({ label, color, onClick }: { label: string; color: string; on
 }
 
 /* ───────── 필터 로직 ───────── */
-function filterClaims(claims: Claim[], tab: Tab): Claim[] {
-  if (tab === "all") return claims;
-  if (tab === "done") return claims.filter((c) => c.statusStep >= 4 || c.isDenied);
-  return claims.filter((c) => c.statusStep < 4 && !c.isDenied);
+function filterClaims(claims: ApiClaim[], tab: Tab): ApiClaim[] {
+  if (tab === 'all') return claims;
+  const doneStatuses: ClaimStatus[] = ['approved', 'paid', 'denied'];
+  if (tab === 'done')
+    return claims.filter((c) => doneStatuses.includes(c.status));
+  return claims.filter((c) => !doneStatuses.includes(c.status));
 }
 
 /* ───────── 메인 페이지 ───────── */
 export default function HistoryPage() {
-  const [openIdx, setOpenIdx] = useState<number | null>(null);
-  const [tab, setTab] = useState<Tab>("all");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>('all');
 
-  const filtered = filterClaims(CLAIMS, tab);
+  const { data, isLoading, isError } = useClaims();
+  const allClaims = data?.items ?? [];
+  const filtered = filterClaims(allClaims, tab);
 
   return (
-    <div className="animate-[fadeIn_0.25s_ease] px-[var(--space-page)] pt-[var(--space-page)] pb-24">
+    <div className='animate-[fadeIn_0.25s_ease] px-[var(--space-page)] pt-[var(--space-page)] pb-24'>
       {/* 헤더 */}
-      <div className="mb-5">
-        <h1 className="text-[22px] font-bold text-text-heading tracking-[-0.02em]">접수 내역</h1>
-        <p className="text-sm text-text-muted mt-1">총 {CLAIMS.length}건</p>
+      <div className='mb-5'>
+        <h1 className='text-[22px] font-bold text-text-heading tracking-[-0.02em]'>
+          접수 내역
+        </h1>
+        <p className='text-sm text-text-muted mt-1'>총 {allClaims.length}건</p>
       </div>
 
       {/* 탭 필터 */}
-      <div className="flex gap-2 mb-5">
-        {([["all", "전체"], ["active", "진행중"], ["done", "완료"]] as const).map(([key, label]) => (
+      <div className='flex gap-2 mb-5'>
+        {(
+          [
+            ['all', '전체'],
+            ['active', '진행중'],
+            ['done', '완료'],
+          ] as const
+        ).map(([key, label]) => (
           <button
             key={key}
-            type="button"
-            onClick={() => { setTab(key); setOpenIdx(null); }}
+            type='button'
+            onClick={() => {
+              setTab(key);
+              setOpenId(null);
+            }}
             className={clsx(
-              "px-4 py-1.5 rounded-full text-[13px] font-semibold border transition-colors",
+              'px-4 py-1.5 rounded-full text-[13px] font-semibold border transition-colors',
               tab === key
-                ? "bg-[#0061AF] text-white border-[#0061AF]"
-                : "bg-white text-text-muted border-[#ddd]"
+                ? 'bg-[#0061AF] text-white border-[#0061AF]'
+                : 'bg-white text-text-muted border-[#ddd]'
             )}
           >
             {label}
@@ -177,153 +167,174 @@ export default function HistoryPage() {
         ))}
       </div>
 
-      {/* 카드 리스트 */}
-      {filtered.length === 0 && (
-        <p className="text-center text-text-muted text-sm py-12">해당 내역이 없습니다.</p>
+      {/* 로딩 / 에러 */}
+      {isLoading && (
+        <div className='flex justify-center py-12'>
+          <div className='w-6 h-6 rounded-full border-2 border-[#0061AF] border-t-transparent animate-spin' />
+        </div>
+      )}
+      {isError && (
+        <p className='text-center text-danger text-sm py-12'>
+          데이터를 불러오지 못했습니다.
+        </p>
+      )}
+
+      {!isLoading && filtered.length === 0 && (
+        <p className='text-center text-text-muted text-sm py-12'>
+          해당 내역이 없습니다.
+        </p>
       )}
 
       {filtered.map((claim) => {
-        const globalIdx = CLAIMS.indexOf(claim);
-        const isOpen = openIdx === globalIdx;
+        const meta = CATEGORY_META[claim.category];
+        const statusStep = STATUS_STEP[claim.status] ?? 1;
+        const isDenied = claim.status === 'denied';
+        const isPaid = claim.status === 'paid';
+        const amount = formatAmount(
+          claim.insurance_amount_ai ?? claim.insurance_amount_final ?? undefined
+        );
+        const isOpen = openId === claim.id;
 
         return (
           <div
             key={claim.id}
-            className="mb-3.5 rounded-[var(--radius-card)] border border-[#e5e5e5] bg-[var(--color-surface)] shadow-[var(--shadow-card)] cursor-pointer active:scale-[0.98] transition-transform overflow-hidden"
-            onClick={() => setOpenIdx(isOpen ? null : globalIdx)}
+            className='mb-3.5 rounded-[var(--radius-card)] border border-[#e5e5e5] bg-[var(--color-surface)] shadow-[var(--shadow-card)] cursor-pointer active:scale-[0.98] transition-transform overflow-hidden'
+            onClick={() => setOpenId(isOpen ? null : claim.id)}
           >
-            <div className="p-5">
-              {/* ── 상단: 아이콘 + 접수번호 + 유형 | 배지 + 날짜 ── */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+            <div className='p-5'>
+              {/* 상단: 아이콘 + 접수번호 + 유형 | 배지 + 날짜 */}
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center gap-3'>
                   <div
-                    className="w-10 h-10 rounded-[10px] flex items-center justify-center text-[18px]"
-                    style={{ background: `${claim.typeColor}14`, color: claim.typeColor }}
+                    className='w-10 h-10 rounded-[10px] flex items-center justify-center text-[18px]'
+                    style={{ background: `${meta.color}14`, color: meta.color }}
                   >
-                    {claim.typeIcon}
+                    {meta.icon}
                   </div>
                   <div>
-                    <div className="text-[13px] text-text-muted font-medium">{claim.id}</div>
-                    <div className="text-[15px] font-semibold text-text-body mt-0.5">{claim.type}</div>
+                    <div className='text-[13px] text-text-muted font-medium'>
+                      #{claim.claim_number}
+                    </div>
+                    <div className='text-[15px] font-semibold text-text-body mt-0.5'>
+                      {meta.label}
+                    </div>
                   </div>
                 </div>
-                <div className="text-right flex flex-col items-end gap-1.5">
-                  {typeBadge(claim.typeClass)}
-                  <div className="text-xs text-text-dim">{claim.date}</div>
+                <div className='text-right flex flex-col items-end gap-1.5'>
+                  {claim.type_class && typeBadge(claim.type_class)}
+                  <div className='text-xs text-text-dim'>
+                    {formatDate(claim.created_at)}
+                  </div>
                 </div>
               </div>
 
-              {/* ── 중단: 진행 상태 스텝 ── */}
-              <div className="mt-3.5 pt-3.5 border-t border-border-subtle">
+              {/* 진행 상태 스텝 */}
+              <div className='mt-3.5 pt-3.5 border-t border-border-subtle'>
                 <StatusSteps>
                   {STEPS.map((label, i) => (
                     <StatusSteps.Step
                       key={label}
                       label={label}
                       status={
-                        i + 1 < claim.statusStep
-                          ? "done"
-                          : i + 1 === claim.statusStep
-                            ? "current"
-                            : "pending"
+                        i + 1 < statusStep
+                          ? 'done'
+                          : i + 1 === statusStep
+                          ? 'current'
+                          : 'pending'
                       }
                     />
                   ))}
                 </StatusSteps>
               </div>
 
-              {/* ── 현재 상태 요약 한 줄 ── */}
-              <div className="mt-2.5 flex items-center justify-between">
-                <span className="text-[13px] text-text-muted">{claim.status}</span>
+              {/* 현재 상태 요약 */}
+              <div className='mt-2.5 flex items-center justify-between'>
+                <span className='text-[13px] text-text-muted'>
+                  {getStatusLabel(claim.status)}
+                </span>
                 <ChevronDown
                   size={16}
-                  className={clsx("text-text-dim transition-transform", isOpen && "rotate-180")}
+                  className={clsx(
+                    'text-text-dim transition-transform',
+                    isOpen && 'rotate-180'
+                  )}
                 />
               </div>
 
-              {/* ── 펼쳐지는 상세 ── */}
+              {/* 펼쳐지는 상세 */}
               {isOpen && (
-                <div className="mt-3 pt-3 border-t border-border-subtle animate-[fadeIn_0.15s_ease]">
-                  <DetailRow label="위치" value={claim.location} />
-                  <DetailRow label="피해 내용" value={claim.detail} />
-                  {claim.inspection && (
-                    <DetailRow label="현장조사" value={claim.inspection} />
+                <div className='mt-3 pt-3 border-t border-border-subtle'>
+                  {claim.location_detail && (
+                    <DetailRow label='위치' value={claim.location_detail} />
+                  )}
+                  {claim.description && (
+                    <DetailRow label='피해 내용' value={claim.description} />
                   )}
 
-                  {/* TYPE C: 금액 & 상태 */}
-                  {claim.typeClass === "C" && (
+                  {/* TYPE C: 금액 */}
+                  {claim.type_class === 'C' && (
                     <>
-                      {claim.amount && (
+                      {amount && (
                         <DetailRow
-                          label="AI 산출액"
-                          value={claim.amount}
+                          label='AI 산출액'
+                          value={amount}
                           valueStyle={{
-                            color: claim.statusStep >= 4 ? "#00854A" : "#0061AF",
+                            color: isPaid ? '#00854A' : '#0061AF',
                             fontWeight: 700,
                           }}
                         />
                       )}
-                      {claim.statusStep >= 4 && (
-                        <div className="mt-2 px-3 py-2 rounded-lg bg-[#00854A0D] text-[#00854A] text-[13px] font-semibold text-center">
+                      {isPaid && (
+                        <div className='mt-2 px-3 py-2 rounded-lg bg-[#00854A0D] text-[#00854A] text-[13px] font-semibold text-center'>
                           ✓ 지급 완료
                         </div>
                       )}
-                      {claim.statusStep === 3 && claim.nextAction && (
-                        <div className="mt-2 px-3 py-2 rounded-lg bg-[#0061AF0D] text-[#0061AF] text-[13px] font-medium text-center">
-                          {claim.nextAction} — {claim.amount}
-                        </div>
-                      )}
-                      {claim.statusStep < 3 && claim.nextAction && (
-                        <div className="mt-2 px-3 py-2 rounded-lg bg-[#f5f5f5] text-text-muted text-[13px] text-center">
-                          {claim.nextAction}
+                      {claim.status === 'estimated' && amount && (
+                        <div className='mt-2 px-3 py-2 rounded-lg bg-[#0061AF0D] text-[#0061AF] text-[13px] font-medium text-center'>
+                          보험금 지급 대기 — {amount}
                         </div>
                       )}
                     </>
                   )}
 
                   {/* TYPE A: 하자소송 안내 */}
-                  {claim.typeClass === "A" && (
-                    <div className="mt-3 p-3 rounded-lg border border-[#C9252C33] bg-[#C9252C08]">
-                      <p className="text-[12px] text-[#C9252C] leading-relaxed">
-                        ⚠ 본 건은 시공상 하자 가능성이 있습니다. 현재 단지에서 하자소송이 진행 중이며, 추가 확인이 필요합니다.
+                  {claim.type_class === 'A' && (
+                    <div className='mt-3 p-3 rounded-lg border border-[#C9252C33] bg-[#C9252C08]'>
+                      <p className='text-[12px] text-[#C9252C] leading-relaxed'>
+                        ⚠ 본 건은 시공상 하자 가능성이 있습니다. 현재 단지에서
+                        하자소송이 진행 중이며, 추가 확인이 필요합니다.
                       </p>
-                      {claim.nextAction && (
-                        <p className="text-[12px] text-text-muted mt-1.5">{claim.nextAction}</p>
-                      )}
                     </div>
                   )}
 
-                  {/* TYPE B: 면책 사유 */}
-                  {claim.typeClass === "B" && (
-                    <div className="mt-3 p-3 rounded-lg border border-[#ddd] bg-[#f9f9f9]">
-                      <p className="text-[12px] text-text-muted leading-relaxed">
-                        면책 통보 — {claim.detail.includes("면책 사유:") ? claim.detail.split("면책 사유:")[1].trim() : "사유 확인 필요"}
+                  {/* TYPE B: 면책 */}
+                  {claim.type_class === 'B' && isDenied && (
+                    <div className='mt-3 p-3 rounded-lg border border-[#ddd] bg-[#f9f9f9]'>
+                      <p className='text-[12px] text-text-muted leading-relaxed'>
+                        면책 통보 — 사유 확인이 필요합니다.
                       </p>
-                      {claim.nextAction && (
-                        <p className="text-[12px] text-[#C9252C] mt-1.5 font-medium">{claim.nextAction}</p>
-                      )}
+                      <p className='text-[12px] text-[#C9252C] mt-1.5 font-medium'>
+                        이의신청 가능
+                      </p>
                     </div>
                   )}
 
-                  {/* ── 액션 버튼 ── */}
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {/* TYPE A: 현장조사 + 변호사 의견서 */}
-                    {claim.typeClass === "A" && (
+                  {/* 액션 버튼 */}
+                  <div className='mt-4 flex flex-wrap gap-2'>
+                    {claim.type_class === 'A' && (
                       <>
-                        <ActionBtn label="추가 질의" color="#0061AF" />
-                        <ActionBtn label="변호사 의견서 요청" color="#00854A" />
+                        <ActionBtn label='추가 질의' color='#0061AF' />
+                        <ActionBtn label='변호사 의견서 요청' color='#00854A' />
                       </>
                     )}
-                    {/* TYPE B: 이의신청 + 변호사 의견서 */}
-                    {claim.typeClass === "B" && (
+                    {claim.type_class === 'B' && isDenied && (
                       <>
-                        <ActionBtn label="이의신청" color="#C9252C" />
-                        <ActionBtn label="변호사 의견서 요청" color="#00854A" />
+                        <ActionBtn label='이의신청' color='#C9252C' />
+                        <ActionBtn label='변호사 의견서 요청' color='#00854A' />
                       </>
                     )}
-                    {/* TYPE C: 산정 전 단계에서만 현장조사 요청 */}
-                    {claim.typeClass === "C" && claim.statusStep < 3 && (
-                      <ActionBtn label="관리소 방문 요청" color="#0061AF" />
+                    {claim.type_class === 'C' && statusStep < 3 && (
+                      <ActionBtn label='관리소 방문 요청' color='#0061AF' />
                     )}
                   </div>
                 </div>
@@ -347,9 +358,14 @@ function DetailRow({
   valueStyle?: React.CSSProperties;
 }) {
   return (
-    <div className="flex justify-between py-1.5 text-sm">
-      <span className="text-text-muted shrink-0">{label}</span>
-      <span className="font-medium text-text-body text-right ml-4" style={valueStyle}>{value}</span>
+    <div className='flex justify-between py-1.5 text-sm'>
+      <span className='text-text-muted shrink-0'>{label}</span>
+      <span
+        className='font-medium text-text-body text-right ml-4'
+        style={valueStyle}
+      >
+        {value}
+      </span>
     </div>
   );
 }
