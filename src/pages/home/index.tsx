@@ -4,17 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { useClaims } from '@/hooks/useClaims';
 import { useNotifications } from '@/hooks/useNotifications';
-import type { ClaimStatus } from '@/lib/api/types';
-
-const ACTIVE_STATUSES: ClaimStatus[] = [
-  'submitted',
-  'classifying',
-  'field_check_pending',
-  'field_checking',
-  'estimating',
-  'estimated',
-  'approval_pending',
-];
+import { ACTIVE_STATUSES } from './constants';
+import StatusBox from './overview/StatusBox';
+import QuickMenuItem from './overview/QuickMenuItem';
 
 export default function HomePage() {
   const user = useAuthStore((s) => s.user);
@@ -211,54 +203,6 @@ export default function HomePage() {
           </Card>
         )}
       </div>
-    </div>
-  );
-}
-
-function StatusBox({
-  label,
-  count,
-  color,
-}: {
-  label: string;
-  count: number;
-  color: string;
-}) {
-  return (
-    <div className='rounded-[10px] border border-[var(--color-border)] py-3 text-center'>
-      <div
-        className='text-[20px] font-bold tracking-[-0.5px]'
-        style={{ color: count > 0 ? color : 'var(--color-text-dim)' }}
-      >
-        {count}
-      </div>
-      <div className='text-[11px] text-text-muted mt-0.5'>{label}</div>
-    </div>
-  );
-}
-
-function QuickMenuItem({
-  symbol,
-  label,
-  onClick,
-  color,
-}: {
-  symbol: string;
-  label: string;
-  onClick: () => void;
-  color: string;
-}) {
-  return (
-    <div className='text-center cursor-pointer' onClick={onClick}>
-      <div
-        className='w-12 h-12 rounded-[14px] border border-[var(--color-border)] flex items-center justify-center text-lg mx-auto mb-1.5 bg-white transition-transform hover:scale-105'
-        style={{ color }}
-      >
-        {symbol}
-      </div>
-      <span className='block text-[11px] font-medium text-text-muted'>
-        {label}
-      </span>
     </div>
   );
 }

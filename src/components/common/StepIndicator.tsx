@@ -7,7 +7,7 @@ interface Props {
 
 export default function StepIndicator({ total, current }: Props) {
   return (
-    <div className="flex items-center justify-center gap-2 mb-6">
+    <div className="flex items-center justify-center gap-2 my-6">
       {Array.from({ length: total }, (_, i) => (
         <div
           key={i}

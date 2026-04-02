@@ -12,15 +12,15 @@ import { getCookieToken } from '@/lib/api/client';
 import { queryClient } from '@/lib/queryClient';
 import { logout } from '@/lib/api/auth';
 import BottomTabBar from '@/components/layout/BottomTabBar';
-import HomePage from '@/pages/HomePage';
-import ClaimPage from '@/pages/ClaimPage';
-import HistoryPage from '@/pages/HistoryPage';
-import MorePage from '@/pages/MorePage';
-import ProfilePage from '@/pages/ProfilePage';
-import InsuranceInfoPage from '@/pages/InsuranceInfoPage';
-import DocumentsPage from '@/pages/DocumentsPage';
-import LoginPage from '@/pages/LoginPage';
-import SignupPage from '@/pages/SignupPage';
+import HomePage from '@/pages/home';
+import ClaimPage from '@/pages/claim';
+import HistoryPage from '@/pages/history';
+import MorePage from '@/pages/more';
+import ProfilePage from '@/pages/more/profile';
+import InsuranceInfoPage from '@/pages/more/insurance-info';
+import DocumentsPage from '@/pages/more/documents';
+import LoginPage from '@/pages/login';
+import SignupPage from '@/pages/signup';
 
 const NO_TAB_ROUTES = ['/login', '/signup'];
 
